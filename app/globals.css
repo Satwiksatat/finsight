@@ -1,26 +1,188 @@
-@import "tailwindcss";
+/* app/globals.css */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Essential Tailwind CSS directives */
+/* These three lines import Tailwind's base styles, component classes, and utility classes */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* -------------------------------------------------------------------------------------- */
+/* Custom global styles and Shadcn/ui variables */
+/* These definitions set up your custom color palette and other design tokens */
+@layer base {
+  /* CSS Variables for Light Mode */
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+    --background: 0 0% 100%;       /* White */
+    --foreground: 222.2 84% 4.9%;  /* Dark Gray */
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    --card: 0 0% 100%;             /* White for cards */
+    --card-foreground: 222.2 84% 4.9%; /* Dark Gray for card text */
+
+    --popover: 0 0% 100%;          /* White for popovers */
+    --popover-foreground: 222.2 84% 4.9%; /* Dark Gray for popover text */
+
+    --primary: 222.2 47.4% 11.2%;  /* Primary Blue/Dark for active elements, buttons */
+    --primary-foreground: 210 20% 98%; /* Light text on primary background */
+
+    --secondary: 210 40% 96.1%;    /* Light Gray for secondary elements, hover states */
+    --secondary-foreground: 222.2 47.4% 11.2%; /* Dark Gray text on secondary background */
+
+    --muted: 210 40% 96.1%;        /* Lighter Gray for muted backgrounds, e.g., bot messages */
+    --muted-foreground: 215.4 16.3% 46.9%; /* Medium Gray text on muted backgrounds */
+
+    --accent: 210 40% 96.1%;       /* Another light gray for accent elements */
+    --accent-foreground: 222.2 47.4% 11.2%; /* Dark Gray text on accent background */
+
+    --destructive: 0 84.2% 60.2%;  /* Red for error states */
+    --destructive-foreground: 210 20% 98%; /* Light text on destructive background */
+
+    --border: 214.3 31.8% 91.4%;   /* Light Gray for borders */
+    --input: 214.3 31.8% 91.4%;    /* Light Gray for input borders */
+    --ring: 222.2 84% 4.9%;        /* Dark Gray for focus rings */
+
+    --radius: 0.5rem;              /* Default border-radius */
+  }
+
+  /* CSS Variables for Dark Mode (applied when .dark class is present on html) */
+  .dark {
+    --background: 222.2 84% 4.9%;  /* Very Dark Blue/Gray */
+    --foreground: 210 20% 98%;     /* Light Gray */
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 20% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 210 20% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 20% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+
+  /* -------------------------------------------------------------------------------------- */
+  /* Global HTML element base styles */
+  /* These are applied directly to HTML elements to ensure consistent foundational styling */
+
+  * {
+    /* Sets box-sizing for all elements to border-box for easier layout */
+    box-sizing: border-box;
+    /* Applies the border color variable to all elements' borders by default.
+       This will only have a visual effect if an element also has a 'border' or 'border-width' utility class.
+    */
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    /* Sets the background and text color for the entire body using theme variables */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  /* -------------------------------------------------------------------------------------- */
+  /* Markdown and Code Block Styling (using .prose class applied in MarkdownRenderer) */
+  /* This enhances the readability and appearance of markdown content */
+
+  .prose :where(pre):not(:where([class~="not-prose"] *)) {
+    /* Styles for code blocks (e.g., ```javascript ... ```) */
+    background-color: hsl(var(--muted)); /* Consistent background from theme */
+    color: hsl(var(--muted-foreground)); /* Consistent text color from theme */
+    border-radius: 0.5rem;
+    padding: 1em;
+    overflow-x: auto; /* Ensures horizontal scrolling for long lines of code */
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font */
+    font-size: 0.875rem; /* Standard code font size */
+    line-height: 1.5;
+  }
+
+  .prose :where(code):not(:where([class~="not-prose"] *)) {
+    /* Styles for inline code (e.g., `console.log()`) */
+    padding: 0.2em 0.4em;
+    border-radius: 0.25rem;
+    background-color: hsl(var(--muted)); /* Consistent background from theme */
+    color: hsl(var(--foreground)); /* Primary text color for contrast */
+    font-size: 0.875em;
+    white-space: nowrap; /* Prevents inline code from wrapping */
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  }
+
+  /* Dark mode specific adjustments for code blocks */
+  .dark .prose :where(pre):not(:where([class~="not-prose"] *)) {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+  }
+
+  .dark .prose :where(code):not(:where([class~="not-prose"] *)) {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--primary-foreground)); /* Brighter text for dark mode inline code */
+  }
+
+  /* Further Prose adjustments for better typography */
+  .prose :where(h1, h2, h3, h4, h5, h6):not(:where([class~="not-prose"] *)) {
+    color: hsl(var(--foreground));
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  .prose :where(p, ul, ol, blockquote):not(:where([class~="not-prose"] *)) {
+    color: hsl(var(--foreground));
+    line-height: 1.75;
+  }
+  .prose :where(a):not(:where([class~="not-prose"] *)) {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .prose :where(strong):not(:where([class~="not-prose"] *)) {
+    color: hsl(var(--foreground));
+  }
+  .prose :where(hr):not(:where([class~="not-prose"] *)) {
+    border-color: hsl(var(--border));
+  }
+  .prose :where(li):not(:where([class~="not-prose"] *)) {
+    margin-bottom: 0.5em;
+  }
+  .prose :where(table):not(:where([class~="not-prose"] *)) {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    border-radius: 0.5rem; /* Rounded corners for tables */
+    overflow: hidden; /* Ensures rounded corners clip content */
+  }
+  .prose :where(th, td):not(:where([class~="not-prose"] *)) {
+    border: 1px solid hsl(var(--border));
+    padding: 0.75rem;
+    text-align: left;
+  }
+  .prose :where(th):not(:where([class~="not-prose"] *)) {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    font-weight: 600;
+  }
+  .prose :where(td):not(:where([class~="not-prose"] *)) {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+  }
+  .dark .prose :where(th):not(:where([class~="not-prose"] *)) {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+  .dark .prose :where(td):not(:where([class~="not-prose"] *)) {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+  }
 }
