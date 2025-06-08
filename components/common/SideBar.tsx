@@ -207,8 +207,9 @@ export function Sidebar() {
                           e.stopPropagation();
                           handleDeleteClick(conv.id, conv.title);
                         }}
+                        className="text-red-600 hover:!text-red-700 focus:!text-red-700"
                       >
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                        <Trash2 className="w-4 h-4 mr-2 text-red-600" /> Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenuPortal>
@@ -234,7 +235,7 @@ export function Sidebar() {
                   Visit settings to delete any memories saved during this chat.
                 </>
               ) : (
-                'Enter the new name for this chat:'
+                ''
               )}
             </DialogDescription>
           </DialogHeader>
