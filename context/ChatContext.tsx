@@ -83,7 +83,7 @@ const archiveConversation = (id: string) => {
     const newConversation: Conversation = {
       id: newId,
       title: 'New Chat',
-      lastMessageSnippet: 'Start typing...',
+      lastMessageSnippet: '',
       timestamp: new Date(),
       messages: undefined
     };
