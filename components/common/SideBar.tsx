@@ -1,74 +1,162 @@
 // components/common/Sidebar.tsx
 'use client';
 
-import Link from 'next/link';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+} from '@/components/ui/dropdown-menu';
+
+import {
+  MoreVertical,
+  Share,
+  Archive,
+  Pencil,
+  Trash2,
+  MessageSquarePlus,
+  MessageSquareText,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { MessageSquarePlus, MessageSquareText } from 'lucide-react'; // Icons from lucide-react
-import { useChat } from '@/context/ChatContext'; // Custom chat context hook
-import { cn } from '@/lib/utils'; // Utility for conditional classnames
+import { useChat } from '@/context/ChatContext';
+import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
 export function Sidebar() {
-  const { conversations, activeChatId, setActiveChatId, startNewChat } = useChat();
+  const {
+    conversations,
+    activeChatId,
+    setActiveChatId,
+    startNewChat,
+    renameConversation,
+    deleteConversation,
+    archiveConversation,
+  } = useChat();
+
+  const visibleConversations = conversations.filter((c) => !c.archived);
+  const [collapsed, setCollapsed] = useState(false);
+
+  function handleShare(id: string) {
+    console.log(`Share chat: ${id}`);
+  }
+
+  function handleRename(id: string) {
+    const newTitle = prompt("Enter a new name for this chat:");
+    if (newTitle) {
+      renameConversation(id, newTitle);
+    }
+  }
+
+  function handleDelete(id: string) {
+    if (confirm("Are you sure you want to delete this chat?")) {
+      deleteConversation(id);
+    }
+  }
+
+  function handleArchive(id: string) {
+    archiveConversation(id);
+  }
 
   return (
-    // Main sidebar container.
-    // - flex flex-col: Stacks its content vertically.
-    // - h-screen: Takes full viewport height.
-    // - w-64: Fixed width of 64 Tailwind units (16rem).
-    // - border-r border-border: Adds a right border with theme color.
-    // - bg-card: Sets the background color using the card theme variable. (More common for sidebars than muted/40)
-    // - p-4: Padding on all sides.
-    // - shrink-0: Prevents the sidebar from shrinking when flex container space is limited.
-    <div className="flex flex-col h-screen w-64 border-r border-border bg-card p-4 shrink-0">
-      {/* Header section for the sidebar */}
-      <div className="flex items-center justify-between h-14 pb-4 border-b border-border"> {/* Added pb-4 and border-b */}
-        <h2 className="text-xl font-semibold text-foreground">Chats</h2> {/* Ensure text color */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={startNewChat}
-          aria-label="Start new chat"
-          className="text-primary hover:bg-primary/10" // Style for new chat button icon
-        >
-          <MessageSquarePlus className="h-5 w-5" />
-        </Button>
+    <div className={cn("flex flex-col h-screen border-r border-border bg-muted/40 p-4 shrink-0 transition-all", collapsed ? "w-16" : "w-64")}> 
+      <div className="flex items-center justify-between h-14 pb-4 border-b border-border">
+        {!collapsed && <h2 className="text-xl font-semibold text-foreground">Chats</h2>}
+        <div className="flex gap-2">
+          {!collapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={startNewChat}
+              aria-label="Start new chat"
+              className="text-primary hover:bg-primary/10"
+            >
+              <MessageSquarePlus className="h-5 w-5" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label="Toggle sidebar"
+            className="text-muted-foreground"
+          >
+            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </Button>
+        </div>
       </div>
 
-      <Separator className="my-4" /> {/* Separator with vertical margin */}
+      <Separator className="my-4" />
 
-      {/* Scrollable area for the list of conversations */}
-      <ScrollArea className="flex-1 pr-4"> {/* flex-1 allows it to take remaining vertical space, pr-4 for scrollbar padding */}
-        <nav className="grid gap-2"> {/* grid gap-2 for spacing between items */}
-          {conversations.map((conv) => (
-            <Link
+      <ScrollArea className="flex-1 pr-1.5">
+        <nav className="grid gap-2">
+          {visibleConversations.map((conv) => (
+            <div
               key={conv.id}
-              href="#" // You might change this to `/chat/${conv.id}` for actual Next.js routing
-              onClick={() => setActiveChatId(conv.id)}
               className={cn(
-                // Base styles for chat item link
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all", // Changed rounded-lg to rounded-md for subtler curve
-                "hover:bg-accent hover:text-accent-foreground", // Accent hover state
-                // Conditional styles for active chat item
+                "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-all",
+                "hover:bg-accent hover:text-accent-foreground",
                 activeChatId === conv.id
-                  ? "bg-secondary text-secondary-foreground font-semibold" // Active state with secondary background and text
-                  : "text-muted-foreground" // Inactive state text color
+                  ? "bg-secondary text-secondary-foreground font-semibold"
+                  : "text-muted-foreground"
               )}
             >
-              <MessageSquareText className="h-4 w-4 shrink-0" /> {/* shrink-0 prevents icon from shrinking */}
-              <div className="flex flex-col overflow-hidden flex-grow"> {/* flex-grow to allow text to take space */}
-                <span className="truncate w-full text-left">
-                  {conv.title}
-                </span>
-                <span className="text-xs text-muted-foreground truncate w-full text-left mt-0.5"> {/* Added mt-0.5 for small gap */}
-                  {conv.lastMessageSnippet || 'No messages'}
-                </span>
+              <div
+                onClick={() => setActiveChatId(conv.id)}
+                className="flex items-center gap-2 cursor-pointer flex-grow overflow-hidden"
+              >
+                <MessageSquareText className="h-4 w-4 shrink-0" />
+                {!collapsed && (
+                  <div className="flex flex-col overflow-hidden flex-grow">
+                    <span className="truncate w-full text-left">{conv.title}</span>
+                    <span className="text-xs text-muted-foreground truncate w-full text-left mt-0.5">
+                      {conv.lastMessageSnippet || 'No messages'}
+                    </span>
+                  </div>
+                )}
+                {/* {!collapsed && (
+                  <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                    {new Date(conv.timestamp).toLocaleDateString()}
+                  </span>
+                )} */}
               </div>
-              <span className="ml-auto text-xs text-muted-foreground shrink-0"> {/* shrink-0 to prevent timestamp from shrinking */}
-                {new Date(conv.timestamp).toLocaleDateString()}
-              </span>
-            </Link>
+
+              {!collapsed && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="ml-2">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent
+                      align="end"
+                      side="bottom"
+                      className="bg-white border border-gray-200 shadow-lg z-50"
+                      sideOffset={4}
+                    >
+                      <DropdownMenuItem onClick={() => handleShare(conv.id)}>
+                        <Share className="w-4 h-4 mr-2" /> Share
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleArchive(conv.id)}>
+                        <Archive className="w-4 h-4 mr-2" /> Archive
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleRename(conv.id)}>
+                        <Pencil className="w-4 h-4 mr-2" /> Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(conv.id)}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenu>
+              )}
+            </div>
           ))}
         </nav>
       </ScrollArea>

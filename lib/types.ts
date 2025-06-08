@@ -52,9 +52,10 @@ export interface ChatMessage {
 
 // For chat history in the sidebar
 export interface Conversation {
-  messages: Conversation | undefined;
   id: string;
   title: string;
   lastMessageSnippet: string;
-  timestamp: Date;
+  timestamp: Date | string;
+  messages: Conversation | undefined; // Adjust as needed
+  archived?: boolean; // Add this line
 }

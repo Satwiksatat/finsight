@@ -12,6 +12,10 @@ interface ChatContextType {
   addConversation: (conversation: Conversation) => void;
   updateConversation: (id: string, updates: Partial<Conversation>) => void;
   startNewChat: () => void;
+    renameConversation: (id: string, newTitle: string) => void;
+  deleteConversation: (id: string) => void;
+  archiveConversation: (id: string) => void; // Optional: depends on implementation
+
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -47,6 +51,32 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       prev.map((conv) => (conv.id === id ? { ...conv, ...updates } : conv))
     );
   };
+  const renameConversation = (id: string, newTitle: string) => {
+  updateConversation(id, { title: newTitle });
+};
+
+const deleteConversation = (id: string) => {
+  setConversations((prev) => {
+    const filtered = prev.filter((conv) => conv.id !== id);
+
+    // If the active conversation is deleted, reset the active ID
+    if (activeChatId === id) {
+      if (filtered.length > 0) {
+        setActiveChatId(filtered[filtered.length - 1].id);
+      } else {
+        setActiveChatId(null);
+      }
+    }
+
+    return filtered;
+  });
+};
+
+const archiveConversation = (id: string) => {
+  // Example: just update with an `archived: true` flag (you must extend Conversation type for this)
+  updateConversation(id, { archived: true });
+};
+
 
   const startNewChat = () => {
     const newId = uuidv4();
@@ -76,13 +106,17 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ChatContext.Provider
       value={{
-        activeChatId,
-        setActiveChatId,
-        conversations,
-        addConversation,
-        updateConversation,
-        startNewChat,
-      }}
+            activeChatId,
+            setActiveChatId,
+            conversations,
+            addConversation,
+            updateConversation,
+            startNewChat,
+            renameConversation,
+            deleteConversation,
+            archiveConversation
+        }}
+
     >
       {children}
     </ChatContext.Provider>
