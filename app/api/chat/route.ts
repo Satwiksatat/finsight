@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No user query found in messages.' }, { status: 400 });
     }
 
-    const response = await fetch('http://localhost:80/v1/chat-messages', {
+    const response = await fetch('http://192.168.29.46:80/v1/chat-messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
