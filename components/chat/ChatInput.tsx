@@ -30,7 +30,7 @@ export function ChatInput({
     // Container for the textarea and send button.
     // - relative: Needed for the absolute positioning of the send button.
     // - flex items-end gap-2: Arranges children in a row, aligns them to the bottom, with a 2-unit gap.
-    <div className="relative flex items-end gap-2">
+    <div className="relative w-full">
       <Textarea
         placeholder="Type your message..."
         value={inputMessage}
@@ -47,9 +47,9 @@ export function ChatInput({
         // - rounded-lg: Adds rounded corners.
         // - border border-input: Adds a border using the input color.
         className={cn(
-          "flex-1 min-h-[40px] resize-none pr-12 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg",
-          "border border-input", // Added explicit border for visual definition
-          isLoading && "opacity-50 cursor-not-allowed" // Reduce opacity and change cursor when loading
+          "w-full min-h-[40px] resize-none pr-12 rounded-xl",
+      "border border-input shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      isLoading && "opacity-50 cursor-not-allowed"
         )}
       />
       <Button
@@ -60,7 +60,7 @@ export function ChatInput({
         // - rounded-full: Makes the button perfectly circular.
         // - bg-primary text-primary-foreground: Applies primary theme colors.
         // - hover:bg-primary/90: Darkens on hover.
-        className="absolute right-2 bottom-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black text-primary-foreground hover:bg-black/90 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
         onClick={onSendMessage}
         disabled={isLoading || inputMessage.trim() === ''} // Disable if loading or input is empty
         aria-label="Send message" // Accessibility

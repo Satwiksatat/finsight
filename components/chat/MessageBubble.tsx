@@ -25,7 +25,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       </Avatar>
       <Card className={cn(
         'p-3',
-        isUser ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted text-muted-foreground rounded-bl-none'
+        isUser ? 'bg-muted text-muted-foreground rounded-bl-none' : 'bg-muted text-muted-foreground rounded-bl-none'
       )}>
         <CardContent className="p-0 text-sm">
           {message.content.map((contentBlock, index) => (
