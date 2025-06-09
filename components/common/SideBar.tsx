@@ -174,67 +174,69 @@ export function Sidebar() {
 
     {/* Chat List */}
     {!collapsed && (
-      <ScrollArea className="flex-1">
-        {visibleConversations.map((chat:Conversation) => (
-            <div
-              key={chat.id}
-              className={cn(
-                'flex items-center justify-between px-2 py-1 rounded hover:bg-gray-200 cursor-pointer text-sm',
-                activeChatId === chat.id ? 'bg-gray-200 font-semibold' : ''
-              )}
-              onClick={() => setActiveChatId(chat.id)}
-            >
-              {editingChatId === chat.id ? (
-                <input
-                  ref={inputRef}
-                  value={editInput}
-                  onChange={(e) => setEditInput(e.target.value)}
-                  onBlur={() => {
-                    handleRenameInline(chat.id, editInput);
-                    setEditingChatId(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleRenameInline(chat.id, editInput);
-                      setEditingChatId(null);
-                    }
-                  }}
-                  className="w-full p-1 border rounded"
-                />
-              ) : (
-                <span className="truncate">{chat.title}</span>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="ml-2">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => {
-                    setEditingChatId(chat.id);
-                    setEditInput(chat.title);
-                  }}>
-                    <Pencil className="w-4 h-4 mr-2" /> Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleShare(chat.id)}>
-                    <Share className="w-4 h-4 mr-2" /> Share
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleArchive(chat.id)}>
-                    <Archive className="w-4 h-4 mr-2" /> Archive
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleDeleteClick(chat.id, chat.title)}
-                    className="text-red-600"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))}
-      </ScrollArea>
-    )}
+  <ScrollArea className="flex-1 overflow-y-auto">
+    <div className="flex flex-col gap-2 pr-2">
+      {visibleConversations.map((chat: Conversation) => (
+        <div
+          key={chat.id}
+          className={cn(
+            'flex items-center justify-between px-3 py-2 rounded-md bg-white hover:bg-gray-100 text-sm text-black cursor-pointer',
+            activeChatId === chat.id && 'bg-gray-200'
+          )}
+          onClick={() => setActiveChatId(chat.id)}
+        >
+          {editingChatId === chat.id ? (
+            <input
+              ref={inputRef}
+              value={editInput}
+              onChange={(e) => setEditInput(e.target.value)}
+              onBlur={() => {
+                handleRenameInline(chat.id, editInput);
+                setEditingChatId(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleRenameInline(chat.id, editInput);
+                  setEditingChatId(null);
+                }
+              }}
+              className="w-full bg-transparent outline-none"
+            />
+          ) : (
+            <span className="truncate">{chat.title}</span>
+          )}
+
+          {/* dropdown menu for chat actions */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => {
+                setEditingChatId(chat.id);
+                setEditInput(chat.title);
+              }}>
+                <Pencil className="w-4 h-4 mr-2" /> Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleShare(chat.id)}>
+                <Share className="w-4 h-4 mr-2" /> Share
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleArchive(chat.id)}>
+                <Archive className="w-4 h-4 mr-2" /> Archive
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDeleteClick(chat.id, chat.title)}>
+                <Trash2 className="w-4 h-4 mr-2 text-red-500" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ))}
+    </div>
+  </ScrollArea>
+)}
+
 
     {/* Confirmation Dialog */}
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
