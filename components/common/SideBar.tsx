@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -33,6 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 export function Sidebar() {
   const {
@@ -45,37 +46,44 @@ export function Sidebar() {
     archiveConversation,
   } = useChat();
 
-  const visibleConversations = conversations.filter((c) => !c.archived);
   const [collapsed, setCollapsed] = useState(false);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editInput, setEditInput] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentAction, setCurrentAction] = useState<{
-    type: 'delete' | 'rename';
+    type: 'delete';
     chatId: string;
     chatTitle: string;
   } | null>(null);
 
+  const [visibleConversations, setVisibleConversations] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('conversations');
+      return saved ? JSON.parse(saved) : conversations.filter((c) => !c.archived);
+    }
+    return conversations.filter((c) => !c.archived);
+  });
+
+  useEffect(() => {
+    const nonArchived = conversations.filter((c) => !c.archived);
+    setVisibleConversations(nonArchived);
+    localStorage.setItem('conversations', JSON.stringify(nonArchived));
+  }, [conversations]);
+
   function handleShare(id: string) {
-    console.log(`Share chat: ${id}`);
+    navigator.clipboard.writeText(`${window.location.origin}/chat/${id}`);
+    toast.success('Chat link copied to clipboard!');
   }
 
-  function handleRenameClick(id: string, currentTitle: string) {
-    setCurrentAction({
-      type: 'rename',
-      chatId: id,
-      chatTitle: currentTitle
-    });
-    setEditInput(currentTitle);
-    setDialogOpen(true);
+  function handleRenameInline(id: string, newTitle: string) {
+    if (newTitle.trim()) {
+      renameConversation(id, newTitle.trim());
+      toast.success('Conversation renamed.');
+    }
   }
 
   function handleDeleteClick(id: string, title: string) {
-    setCurrentAction({
-      type: 'delete',
-      chatId: id,
-      chatTitle: title
-    });
+    setCurrentAction({ type: 'delete', chatId: id, chatTitle: title });
     setDialogOpen(true);
   }
 
@@ -84,9 +92,7 @@ export function Sidebar() {
 
     if (currentAction.type === 'delete') {
       deleteConversation(currentAction.chatId);
-    } else if (currentAction.type === 'rename' && editInput.trim()) {
-      renameConversation(currentAction.chatId, editInput.trim());
-      setEditingChatId(null);
+      toast.warning(`Conversation "${currentAction.chatTitle}" deleted.`);
     }
 
     setDialogOpen(false);
@@ -95,20 +101,29 @@ export function Sidebar() {
 
   function handleArchive(id: string) {
     archiveConversation(id);
+    toast(`Conversation archived.`);
   }
 
   return (
     <div
       className={cn(
-        'flex flex-col h-screen border-r border-gray-200 bg-gray-50 p-4 shrink-0 transition-all',
-        collapsed ? 'w-16' : 'w-64'
+        'flex flex-col h-screen border-r border-gray-200 bg-gray-50 transition-all duration-300 ease-in-out shrink-0',
+        collapsed ? 'w-16 p-2' : 'w-64 p-4'
       )}
     >
       <div className="flex items-center justify-between h-14 mb-4">
         {!collapsed && <img src="/logo.svg" alt="Logo" className="h-6 w-auto" />}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCollapsed(!collapsed)}
+          className="ml-auto"
+        >
+          <MoreVertical className="w-5 h-5" />
+        </Button>
       </div>
 
-      <div className="flex flex-col items-start gap-4 pb-4 border-b border-border">
+      <div className="flex flex-col items-start gap-4 pb-4 mb-2">
         <Button
           onClick={startNewChat}
           className="w-full justify-start mb-2 bg-white hover:bg-gray-100 text-black font-medium"
@@ -117,18 +132,17 @@ export function Sidebar() {
         </Button>
 
         <Button
-          onClick={() => alert('Search clicked!')}
+          onClick={() => toast.info('Search clicked!')}
           className="w-full justify-start gap-2 bg-white hover:bg-gray-100 text-black font-medium"
         >
           <Search className="w-4 h-4" /> Search Chat
         </Button>
       </div>
 
-      <Separator className="my-4" />
-
       <ScrollArea className="flex-1 pr-1.5">
         <nav className="grid gap-2">
-          {visibleConversations.map((conv) => (
+          {visibleConversations.map((conv: { id: string; title: string; archived?: boolean }) => (
+
             <div
               key={conv.id}
               className={cn(
@@ -144,33 +158,35 @@ export function Sidebar() {
                 className="flex items-center gap-2 cursor-pointer flex-grow overflow-hidden"
               >
                 <MessageSquareText className="h-4 w-4 shrink-0" />
-                {!collapsed && (
-                  <div className="flex flex-col overflow-hidden flex-grow">
-                    {editingChatId === conv.id ? (
-                      <input
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={editInput}
-                        autoFocus
-                        onChange={(e) => setEditInput(e.target.value)}
-                        onBlur={() => {
-                          if (editInput.trim()) {
-                            renameConversation(conv.id, editInput.trim());
-                          }
-                          setEditingChatId(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && editInput.trim()) {
-                            renameConversation(conv.id, editInput.trim());
-                            setEditingChatId(null);
-                          } else if (e.key === 'Escape') {
-                            setEditingChatId(null);
-                          }
-                        }}
-                      />
-                    ) : (
-                      <span className="truncate w-full text-left">{conv.title}</span>
-                    )}
-                  </div>
+                {!collapsed && editingChatId === conv.id ? (
+                  <input
+                    autoFocus
+                    className="truncate w-full text-left bg-transparent focus:outline-none"
+                    value={editInput}
+                    onChange={(e) => setEditInput(e.target.value)}
+                    onBlur={() => {
+                      if (editInput.trim()) {
+                        handleRenameInline(conv.id, editInput);
+                      }
+                      setEditingChatId(null);
+                    }}
+
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleRenameInline(conv.id, editInput);
+                        setEditingChatId(null);
+                      }
+                    }} />
+                ) : (
+                  <button
+                    className="truncate text-left w-full"
+                    onDoubleClick={() => {
+                      setEditingChatId(conv.id);
+                      setEditInput(conv.title);
+                    }}
+                  >
+                    {conv.title}
+                  </button>
                 )}
               </div>
 
@@ -182,7 +198,7 @@ export function Sidebar() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuContent
+                     <DropdownMenuContent
                       align="end"
                       side="bottom"
                       className="bg-white border border-gray-200 shadow-lg z-50"
@@ -195,14 +211,15 @@ export function Sidebar() {
                         <Archive className="w-4 h-4 mr-2" /> Archive
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRenameClick(conv.id, conv.title);
+                        onClick={() => {
+                          setEditingChatId(conv.id);
+                          setEditInput(conv.title);
                         }}
                       >
                         <Pencil className="w-4 h-4 mr-2" /> Rename
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+
+                        <DropdownMenuItem 
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteClick(conv.id, conv.title);
@@ -211,63 +228,31 @@ export function Sidebar() {
                       >
                         <Trash2 className="w-4 h-4 mr-2 text-red-600" /> Delete
                       </DropdownMenuItem>
+
                     </DropdownMenuContent>
                   </DropdownMenuPortal>
                 </DropdownMenu>
               )}
             </div>
           ))}
+
         </nav>
       </ScrollArea>
 
-      {/* Custom Dialog for both Delete and Rename */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {currentAction?.type === 'delete' ? 'Delete chat?' : 'Rename chat'}
-            </DialogTitle>
+            <DialogTitle>Are you sure?</DialogTitle>
             <DialogDescription>
-              {currentAction?.type === 'delete' ? (
-                <>
-                  This will delete <span className="font-bold">{currentAction?.chatTitle || ''}</span>.
-                  <br />
-                  Visit settings to delete any memories saved during this chat.
-                </>
-              ) : (
-                ''
-              )}
+              This will permanently delete the chat titled "{currentAction?.chatTitle}".
             </DialogDescription>
           </DialogHeader>
-
-          {currentAction?.type === 'rename' && (
-            <input
-              className="w-full p-2 border rounded mt-2"
-              value={editInput}
-              onChange={(e) => setEditInput(e.target.value)}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleActionConfirm();
-                }
-              }}
-            />
-          )}
-
-          <DialogFooter className="gap-2 sm:gap-0 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setDialogOpen(false)}
-              className="w-full sm:w-auto"
-            >
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              variant={currentAction?.type === 'delete' ? 'destructive' : 'default'}
-              onClick={handleActionConfirm}
-              className="w-full sm:w-auto"
-            >
-              {currentAction?.type === 'delete' ? 'Delete' : 'Rename'}
+            <Button variant="destructive" onClick={handleActionConfirm}>
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
