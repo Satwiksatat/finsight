@@ -1,7 +1,6 @@
 /* app/globals.css */
 
 /* Essential Tailwind CSS directives */
-/* These three lines import Tailwind's base styles, component classes, and utility classes */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -38,126 +37,122 @@
 }
 /* -------------------------------------------------------------------------------------- */
 /* Custom global styles and Shadcn/ui variables */
-/* These definitions set up your custom color palette and other design tokens */
 @layer base {
-  /* CSS Variables for Light Mode */
+  /* CSS Variables for Light Mode (kept as is - adjust if needed for your light theme) */
   :root {
     --background: 0 0% 100%;       /* White */
     --foreground: 222.2 84% 4.9%;  /* Dark Gray */
 
-    --card: 0 0% 100%;             /* White for cards */
-    --card-foreground: 222.2 84% 4.9%; /* Dark Gray for card text */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 100%;          /* White for popovers */
-    --popover-foreground: 222.2 84% 4.9%; /* Dark Gray for popover text */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;  /* Primary Blue/Dark for active elements, buttons */
-    --primary-foreground: 210 20% 98%; /* Light text on primary background */
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 20% 98%;
 
-    --secondary: 210 40% 96.1%;    /* Light Gray for secondary elements, hover states */
-    --secondary-foreground: 222.2 47.4% 11.2%; /* Dark Gray text on secondary background */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 96.1%;        /* Lighter Gray for muted backgrounds, e.g., bot messages */
-    --muted-foreground: 215.4 16.3% 46.9%; /* Medium Gray text on muted backgrounds */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;       /* Another light gray for accent elements */
-    --accent-foreground: 222.2 47.4% 11.2%; /* Dark Gray text on accent background */
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%;  /* Red for error states */
-    --destructive-foreground: 210 20% 98%; /* Light text on destructive background */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
 
-    --border: 214.3 31.8% 91.4%;   /* Light Gray for borders */
-    --input: 214.3 31.8% 91.4%;    /* Light Gray for input borders */
-    --ring: 222.2 84% 4.9%;        /* Dark Gray for focus rings */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;              /* Default border-radius */
+    --radius: 0.5rem;
   }
 
-  /* CSS Variables for Dark Mode (applied when .dark class is present on html) */
+  /* CSS Variables for Dark Mode (ADJUSTED FOR GEMINI-LIKE AESTHETICS) */
   .dark {
-    --background: 222.2 84% 4.9%;  /* Very Dark Blue/Gray */
-    --foreground: 210 20% 98%;     /* Light Gray */
+    /* Main background: Deep, desaturated blue-gray. Low lightness, low saturation. */
+    --background: 220 10% 8%; /* Darker, deeper than previous attempt, but not pure black */
+    --foreground: 210 20% 92%; /* Slightly less pure white for foreground text */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 20% 98%;
+    /* Card/Popover backgrounds: Slightly lighter than main background, maintaining depth */
+    --card: 220 10% 12%;       /* Noticeably lighter than background, but still dark */
+    --card-foreground: 210 20% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 220 10% 12%;
+    --popover-foreground: 210 20% 92%;
 
-    --primary: 210 20% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Primary colors: Often a subtle accent color or white in dark mode */
+    --primary: 210 20% 92%; /* Keeping primary bright for visibility */
+    --primary-foreground: 220 10% 8%; /* Dark text on bright primary */
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 20% 98%;
+    /* Secondary/Muted/Accent backgrounds: Various shades of dark gray */
+    --secondary: 220 10% 16%; /* Lighter than card, for interactive elements */
+    --secondary-foreground: 210 20% 92%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 10% 14%; /* For subtle backgrounds like code blocks, slightly lighter than card */
+    --muted-foreground: 215 20.2% 70%; /* Lighter muted text for better readability */
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 20% 98%;
+    --accent: 220 10% 16%; /* Matching secondary for consistent interactive highlights */
+    --accent-foreground: 210 20% 92%;
 
+    /* Destructive colors (typically remain red/orange) */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 20% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* Borders: Subtle borders, lighter than backgrounds but darker than foreground */
+    --border: 220 10% 20%; /* A visible, but not too stark, border */
+    --input: 220 10% 20%;    /* Input borders match */
+    --ring: 212.7 26.8% 83.9%; /* Focus ring (can be your accent color too) */
   }
 
   /* -------------------------------------------------------------------------------------- */
   /* Global HTML element base styles */
-  /* These are applied directly to HTML elements to ensure consistent foundational styling */
 
   * {
-    /* Sets box-sizing for all elements to border-box for easier layout */
     box-sizing: border-box;
-    /* Applies the border color variable to all elements' borders by default.
-       This will only have a visual effect if an element also has a 'border' or 'border-width' utility class.
-    */
     border-color: hsl(var(--border));
   }
 
   body {
-    /* Sets the background and text color for the entire body using theme variables */
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
 
   /* -------------------------------------------------------------------------------------- */
-  /* Markdown and Code Block Styling (using .prose class applied in MarkdownRenderer) */
-  /* This enhances the readability and appearance of markdown content */
+  /* Markdown and Code Block Styling */
 
   .prose :where(pre):not(:where([class~="not-prose"] *)) {
-    /* Styles for code blocks (e.g., ```javascript ... ```) */
-    background-color: hsl(var(--muted)); /* Consistent background from theme */
-    color: hsl(var(--muted-foreground)); /* Consistent text color from theme */
+    background-color: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
     border-radius: 0.5rem;
     padding: 1em;
-    overflow-x: auto; /* Ensures horizontal scrolling for long lines of code */
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font */
-    font-size: 0.875rem; /* Standard code font size */
+    overflow-x: auto;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 0.875rem;
     line-height: 1.5;
   }
 
   .prose :where(code):not(:where([class~="not-prose"] *)) {
-    /* Styles for inline code (e.g., `console.log()`) */
     padding: 0.2em 0.4em;
     border-radius: 0.25rem;
-    background-color: hsl(var(--muted)); /* Consistent background from theme */
-    color: hsl(var(--foreground)); /* Primary text color for contrast */
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
     font-size: 0.875em;
-    white-space: nowrap; /* Prevents inline code from wrapping */
+    white-space: nowrap;
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
   }
 
   /* Dark mode specific adjustments for code blocks */
   .dark .prose :where(pre):not(:where([class~="not-prose"] *)) {
-    background-color: hsl(var(--muted));
-    color: hsl(var(--muted-foreground));
+    background-color: hsl(var(--muted)); /* Use muted for pre-background */
+    color: hsl(var(--muted-foreground)); /* Use muted-foreground for text */
   }
 
   .dark .prose :where(code):not(:where([class~="not-prose"] *)) {
-    background-color: hsl(var(--muted));
+    background-color: hsl(var(--muted)); /* Use muted for inline code background */
     color: hsl(var(--primary-foreground)); /* Brighter text for dark mode inline code */
   }
 
@@ -190,8 +185,8 @@
     border-collapse: collapse;
     margin-top: 1em;
     margin-bottom: 1em;
-    border-radius: 0.5rem; /* Rounded corners for tables */
-    overflow: hidden; /* Ensures rounded corners clip content */
+    border-radius: 0.5rem;
+    overflow: hidden;
   }
   .prose :where(th, td):not(:where([class~="not-prose"] *)) {
     border: 1px solid hsl(var(--border));
