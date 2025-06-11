@@ -212,9 +212,9 @@ export function Sidebar() {
             variant="ghost"
             size="icon"
             onClick={() => setCollapsed(!collapsed)}
-            className="ml-auto"
+            className="ml-auto w-16 h-16 p-3 hover:bg-gray-200 rounded-xl transition"
           >
-          <PiSidebarSimple className="w-6 h-6 text-gray-600" />
+          <PiSidebarSimple className="w-10 h-10 text-gray-800" />
           </Button>
         </Tooltip>
       </div>
