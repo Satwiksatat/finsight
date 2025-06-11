@@ -1,16 +1,12 @@
 // app/layout.tsx
+
+// app/layout.tsx
+
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { Sidebar } from "@/components/common/SideBar";
-import { ChatProvider } from "@/context/ChatContext";
-
-// Configure Inter font with the 'variable' option for Tailwind CSS
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter", // Defines the CSS variable name for this font
-});
+import { inter } from "@/lib/fonts"; // ✅ updated import
+import ClientRootLayout from "./ClientRootLayout"; // ✅ still using client layout
 
 export const metadata: Metadata = {
   title: "Agentic Chatbot UI",
@@ -19,23 +15,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-screen bg-background text-foreground font-sans antialiased flex", // Essential layout and theme classes
-          inter.variable // Links the Inter font's CSS variable to the body
+          "min-h-screen bg-background text-foreground font-sans antialiased flex",
+          inter.variable // ✅ still works
         )}
       >
-        <ChatProvider>
-          <Sidebar />
-          <main className="flex-1 flex flex-col"> {/* Main content area takes remaining space, organizes children vertically */}
-            {children}
-          </main>
-        </ChatProvider>
+        <ClientRootLayout>{children}</ClientRootLayout>
       </body>
     </html>
   );
