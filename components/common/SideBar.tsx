@@ -17,9 +17,11 @@ import {
   Trash2,
   MessageCirclePlus,
   MessageSquareText,
-  Search, // <--- ENSURE THIS IS IMPORTED
+  Search,
 } from 'lucide-react';
-
+import { PiSidebarSimple,
+  PiSidebarFill
+ } from "react-icons/pi";
 import { Tooltip } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -212,7 +214,7 @@ export function Sidebar() {
             onClick={() => setCollapsed(!collapsed)}
             className="ml-auto"
           >
-            <MoreVertical className="w-5 h-5 text-gray-600" />
+          <PiSidebarSimple className="w-6 h-6 text-gray-600" />
           </Button>
         </Tooltip>
       </div>

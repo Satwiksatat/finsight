@@ -54,6 +54,7 @@ export interface ChatMessage {
 export interface Conversation {
   id: string;
   title: string;
+  createdAt: Date;
   lastMessageSnippet: string;
   timestamp: Date | string;
   messages: Conversation | undefined; // Adjust as needed
