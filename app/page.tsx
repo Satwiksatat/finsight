@@ -3,14 +3,13 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatWindow } from '@/components/chat/ChatWindow';
-import { ChatMessage, LLMContent, Conversation, ChartContent } from '@/lib/types';
+import { ChatMessage, LLMContent, ChartContent } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChat } from '@/context/ChatContext';
 import { MarkdownRenderer } from '@/components/common/MarkDownRenderer';
 import { ImageDisplay } from '@/components/common/ImageDisplay';
 import { ChartDisplay } from '@/components/common/ChartDisplay';
-import { generateChatTitle } from '@/app/utils/ChatNaming';
 
 export default function HomePage() {
   const { activeChatId } = useChat();
@@ -18,7 +17,6 @@ export default function HomePage() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [largeContentData, setLargeContentData] = useState<LLMContent | null>(null);
-  const [chats, setChats] = useState<Conversation[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatId = activeChatId || uuidv4();
 
@@ -45,21 +43,6 @@ export default function HomePage() {
     setLargeContentData(null);
   }, [chatId]);
 
-  // Auto-generate chat title when first message is sent
-  useEffect(() => {
-    const generateTitle = async () => {
-      if (messages.length === 1 && messages[0].role === 'user') {
-        try {
-          const title = await generateChatTitle(messages);
-          updateChatTitle(chatId || uuidv4(), title);
-        } catch (error) {
-          console.error('Failed to generate title:', error);
-        }
-      }
-    };
-
-    generateTitle();
-  }, [messages.length, chatId]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,13 +58,6 @@ export default function HomePage() {
     );
   };
 
-  const updateChatTitle = useCallback((chatId: string, title: string) => {
-    setChats(prevChats => 
-      prevChats.map(chat => 
-        chat.id === chatId ? { ...chat, title } : chat
-      )
-    );
-  }, []);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -195,7 +171,6 @@ export default function HomePage() {
           onSendMessage={handleSendMessage}
           isLoading={isLoading}
           messagesEndRef={messagesEndRef}
-          updateChatTitle={updateChatTitle}
         />
       </div>
 
