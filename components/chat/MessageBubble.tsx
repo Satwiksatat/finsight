@@ -20,20 +20,20 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'
       )}
     >
-      <Avatar className={cn('h-8 w-8', isUser ? 'bg-primary/10' : 'bg-accent/10')}>
+      {/* <Avatar className={cn('h-8 w-8', isUser ? 'bg-primary/10' : 'bg-accent/10')}>
         <AvatarFallback>{isUser ? 'You' : 'Bot'}</AvatarFallback>
-      </Avatar>
+      </Avatar> */}
       <Card className={cn(
         'p-3',
-        isUser ? 'bg-muted text-muted-foreground rounded-bl-none' : 'bg-muted text-muted-foreground rounded-bl-none'
+        'bg-sidebar'
       )}>
         <CardContent className="p-0 text-sm">
           {message.content.map((contentBlock, index) => (
             <ResponseMessage key={index} content={contentBlock} />
           ))}
-          <div className="text-xs text-right opacity-70 mt-1">
+          {/* <div className="text-xs text-right opacity-70 mt-1">
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>

@@ -17,8 +17,10 @@ import {
   Trash2,
   MessageCirclePlus,
   MessageSquareText,
-  Search, // <--- ENSURE THIS IS IMPORTED
+  Search,
 } from 'lucide-react';
+
+import { PiSidebarSimple, PiSidebarFill } from 'react-icons/pi';
 
 import { Tooltip } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -37,9 +39,6 @@ import {
 import { toast } from 'sonner';
 import { Conversation } from '@/lib/types';
 
-
-// IMPORTANT: Ensure your Conversation type has a 'createdAt' property.
-// Example:
 
 
 
@@ -195,25 +194,28 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        'flex flex-col h-screen border-r transition-all duration-300 ease-in-out shrink-0 overflow-y-auto',
+        'flex flex-col h-screen transition-all ease-in-out shrink-0 overflow-y-auto',
         collapsed ? 'w-14 p-2' : 'w-64 p-4',
-        // --- MODIFIED CLASSES HERE ---
-        'bg-background border-border', // Use background and border variables
-        // Tailwind's dark: variant will automatically apply the .dark variables
+        'bg-sidebar', // ✅ Light grey background & border
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between h-14 mb-4">
-        {!collapsed && <img src="/logo.svg" alt="Logo" className="h-6 w-auto" />}
+        {!collapsed}
+        {/* <img src="/logo.svg" alt="Logo" className="h-6 w-auto" /> */}
         <Tooltip content={collapsed ? 'Open Sidebar' : 'Close Sidebar'}>
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
+            // variant="ghost"
+            className="ml-auto w-10 h-10 text-gray-600 text-lg" // Added classes
             onClick={() => setCollapsed(!collapsed)}
-            className="ml-auto"
           >
-            <MoreVertical className="w-5 h-5 text-gray-600" />
-          </Button>
+            {/* Use conditional rendering for icons */}
+            {collapsed ? (
+              <PiSidebarFill className="h-6 w-6 ml-2" /> // Bigger icon for open state
+            ) : (
+              <PiSidebarSimple className="w-6 h-6" /> // Bigger icon for closed state
+            )}
+          </button>
         </Tooltip>
       </div>
 
@@ -227,17 +229,16 @@ export function Sidebar() {
             }}
             className="w-full justify-start mb-2 bg-transparent text-foreground hover:bg-muted-foreground/10 font-medium">
 
-            <MessageCirclePlus className="w-4 h-4 mr-2 text-foreground" /> New Chat
+            <MessageCirclePlus className="w-4 h-4 text-foreground" />New Chat
           </Button>
 
           {/* *** CHANGE 2: REPLACE THE OLD INPUT WITH THIS SEARCH TRIGGER *** */}
-          <div
-            className="flex items-center w-full px-3 py-2 text-sm text-foreground cursor-pointer hover:bg-muted-foreground/10 rounded-md"
+          <Button
+            className="w-full justify-start mb-2 bg-transparent text-foreground hover:bg-muted-foreground/10 font-medium"
             onClick={() => setIsSearchDialogOpen(true)}
           >
-            <Search className="w-4 h-4 mr-2 text-muted-foreground" />
-            <span>Search chats</span>
-          </div>
+            <Search className="w-4 h-4 text-foreground" />Search chats
+          </Button>
         </div>
       )}
 
@@ -250,8 +251,8 @@ export function Sidebar() {
               key={chat.id}
               className={cn(
                 'flex items-center justify-between px-3 py-2 text-sm text-foreground cursor-pointer', // text-foreground
-                'hover:bg-accent hover:text-accent-foreground', // Use accent for hover
-                activeChatId === chat.id ? 'bg-accent text-accent-foreground font-semibold' : 'bg-transparent', // Use accent for active
+                "hover:bg-muted-foreground/10", // Use accent for hover
+                activeChatId === chat.id ? 'bg-muted-foreground/10 font-semibold' : 'bg-transparent', // Use accent for active
                 'rounded-md' // Keep rounded corners if desired
               )}
               onClick={() => setActiveChatId(chat.id)}
@@ -311,6 +312,7 @@ export function Sidebar() {
       {/* *** CHANGE 4: ADD THIS ENTIRE SEARCH DIALOG COMPONENT *** */}
       <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
         <DialogContent className="p-0 sm:max-w-md md:max-w-lg lg:max-w-xl">
+          <DialogTitle className="hidden">Search chat</DialogTitle>
           <div className="flex items-center p-4 border-b">
             <Search className="w-5 h-5 mr-3 text-gray-500" />
             <input
@@ -370,12 +372,13 @@ export function Sidebar() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogTitle>Delete chat?</DialogTitle>
+            <br></br>
             <DialogDescription>
               Are you sure you want to delete "
               <strong>{currentAction?.chatTitle}</strong>"?
             </DialogDescription>
-          </DialogHeader>
+          </DialogHeader><br></br>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel

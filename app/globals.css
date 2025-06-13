@@ -41,6 +41,7 @@
   /* CSS Variables for Light Mode (kept as is - adjust if needed for your light theme) */
   :root {
     --background: 0 0% 100%;       /* White */
+    --sidebar-background: 220 13% 95%; /* Slightly darker gray for sidebar */
     --foreground: 222.2 84% 4.9%;  /* Dark Gray */
 
     --card: 0 0% 100%;
@@ -74,11 +75,12 @@
   /* CSS Variables for Dark Mode (ADJUSTED FOR GEMINI-LIKE AESTHETICS) */
   .dark {
     /* Main background: Deep, desaturated blue-gray. Low lightness, low saturation. */
-    --background: 220 10% 8%; /* Darker, deeper than previous attempt, but not pure black */
+    --background: 210 4% 11%; /* Darker, deeper than previous attempt, but not pure black */
+    --sidebar-background: 200 3% 15%; /* Slightly lighter gray for sidebar */
     --foreground: 210 20% 92%; /* Slightly less pure white for foreground text */
 
     /* Card/Popover backgrounds: Slightly lighter than main background, maintaining depth */
-    --card: 220 10% 12%;       /* Noticeably lighter than background, but still dark */
+    --card: 210 4% 11%;       /* Noticeably lighter than background, but still dark */
     --card-foreground: 210 20% 92%;
 
     --popover: 220 10% 12%;
@@ -95,7 +97,7 @@
     --muted: 220 10% 14%; /* For subtle backgrounds like code blocks, slightly lighter than card */
     --muted-foreground: 215 20.2% 70%; /* Lighter muted text for better readability */
 
-    --accent: 220 10% 16%; /* Matching secondary for consistent interactive highlights */
+    --accent: 210 10% 16%; /* Matching secondary for consistent interactive highlights */
     --accent-foreground: 210 20% 92%;
 
     /* Destructive colors (typically remain red/orange) */
@@ -105,7 +107,7 @@
     /* Borders: Subtle borders, lighter than backgrounds but darker than foreground */
     --border: 220 10% 20%; /* A visible, but not too stark, border */
     --input: 220 10% 20%;    /* Input borders match */
-    --ring: 212.7 26.8% 83.9%; /* Focus ring (can be your accent color too) */
+    --ring: 0 0% 100%; /* Focus ring (can be your accent color too) */
   }
 
   /* -------------------------------------------------------------------------------------- */

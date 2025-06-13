@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/common/SideBar";
 import { ChatProvider } from "@/context/ChatContext";
-import { cn } from "@/lib/utils";
 
 export default function ClientRootLayout({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(false);

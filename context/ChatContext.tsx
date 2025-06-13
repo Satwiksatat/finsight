@@ -85,7 +85,8 @@ const archiveConversation = (id: string) => {
       title: 'New Chat',
       lastMessageSnippet: '',
       timestamp: new Date(),
-      messages: undefined
+      messages: undefined,
+      createdAt: new Date()
     };
     addConversation(newConversation);
     setActiveChatId(newId);

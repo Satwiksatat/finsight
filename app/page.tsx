@@ -1,47 +1,90 @@
 // app/page.tsx
-'use client'; // This component uses client-side hooks
+'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatWindow } from '@/components/chat/ChatWindow';
-import { ChatMessage, LLMContent, ChartContent, ImageContent } from '@/lib/types';
-import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
+import { ChatMessage, LLMContent, Conversation, ChartContent } from '@/lib/types';
+import { v4 as uuidv4 } from 'uuid';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useChat } from '@/context/ChatContext'; // To manage active chat
+import { useChat } from '@/context/ChatContext';
 import { MarkdownRenderer } from '@/components/common/MarkDownRenderer';
 import { ImageDisplay } from '@/components/common/ImageDisplay';
 import { ChartDisplay } from '@/components/common/ChartDisplay';
+import { generateChatTitle } from '@/app/utils/ChatNaming';
 
 export default function HomePage() {
-  const { activeChatId } = useChat(); // Get active chat ID from context
-
-  // Local state for the current chat's messages
-  // In a real app, messages would be loaded from a database based on activeChatId
+  const { activeChatId } = useChat();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputMessage, setInputMessage] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [largeContentData, setLargeContentData] = useState<LLMContent | null>(null);
-
+  const [chats, setChats] = useState<Conversation[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatId = activeChatId || uuidv4();
 
-  // Simulate loading messages for a new chat (replace with actual data fetching)
+  // Enhanced message loading effect
   useEffect(() => {
-    // When activeChatId changes, load messages for that chat
-    // For now, reset messages and largeContentData for simplicity
-    setMessages([]);
-    setLargeContentData(null);
-    // In a real app: fetchMessages(activeChatId).then(setMessages);
-  }, [activeChatId]);
+    const loadMessages = async () => {
+      try {
+        setIsLoading(true);
+        // Simulated fetch - replace with actual API call
+        const fakeMessages: ChatMessage[] = [];
+        setMessages(fakeMessages);
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const scrollToBottom = () => {
+    if (chatId) {
+      loadMessages();
+    } else {
+      setMessages([]);
+    }
+    setLargeContentData(null);
+  }, [chatId]);
+
+  // Auto-generate chat title when first message is sent
+  useEffect(() => {
+    const generateTitle = async () => {
+      if (messages.length === 1 && messages[0].role === 'user') {
+        try {
+          const title = await generateChatTitle(messages);
+          updateChatTitle(chatId || uuidv4(), title);
+        } catch (error) {
+          console.error('Failed to generate title:', error);
+        }
+      }
+    };
+
+    generateTitle();
+  }, [messages.length, chatId]);
+
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  const isChartContent = (content: any): content is ChartContent => {
+    return (
+      content?.type === 'chart' &&
+      typeof content.chartType === 'string' &&
+      content.data &&
+      Array.isArray(content.data.labels) &&
+      Array.isArray(content.data.datasets)
+    );
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const updateChatTitle = useCallback((chatId: string, title: string) => {
+    setChats(prevChats => 
+      prevChats.map(chat => 
+        chat.id === chatId ? { ...chat, title } : chat
+      )
+    );
+  }, []);
 
   const handleSendMessage = async () => {
-    if (inputMessage.trim() === '') return;
+    if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: uuidv4(),
@@ -50,44 +93,40 @@ export default function HomePage() {
       timestamp: new Date(),
     };
 
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
-    setLargeContentData(null); // Clear large content when a new message is sent
+    setLargeContentData(null);
 
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ messages: [...messages, userMessage].map(msg => ({ role: msg.role, content: msg.content[0] })) }), // Simple content for API
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          messages: messages.map(msg => ({
+            role: msg.role,
+            content: msg.content[0]
+          })),
+          chatId: chatId 
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Failed to get reader from response body.');
-      }
+      if (!reader) throw new Error('Failed to get reader');
 
-      let decoder = new TextDecoder();
+      const decoder = new TextDecoder();
       let accumulatedContent = '';
-      let botMessageId = uuidv4();
-      let currentBotContent: LLMContent[] = [];
+      const botMessageId = uuidv4();
+      let currentBotContent: LLMContent[] = [{ type: 'text', content: '' }];
 
-      // Add a placeholder bot message immediately
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          id: botMessageId,
-          role: 'assistant',
-          content: [{ type: 'text', content: '...' }], // Placeholder
-          timestamp: new Date(),
-        },
-      ]);
+      setMessages(prev => [...prev, {
+        id: botMessageId,
+        role: 'assistant',
+        content: currentBotContent,
+        timestamp: new Date(),
+      }]);
 
       while (true) {
         const { done, value } = await reader.read();
@@ -96,110 +135,113 @@ export default function HomePage() {
         const chunk = decoder.decode(value, { stream: true });
         accumulatedContent += chunk;
 
-        // --- Parsing Logic for LLM Output ---
-        // This is a simplified example. In a real application, you might
-        // parse partial JSON objects if your LLM streams structured JSON,
-        // or process Markdown chunks as they arrive.
-        // For demonstration, we'll try to detect content types from the full accumulated string.
-
-        // Attempt to parse as JSON first (for charts, images, or structured data)
-        try {
-          const parsedJson = JSON.parse(accumulatedContent);
-          if (parsedJson.type) {
-            // Found a structured object
-            currentBotContent = [parsedJson as LLMContent]; // Assume it's a complete LLMContent object
-            if (parsedJson.type === 'chart' || parsedJson.type === 'image' || (parsedJson.type === 'code' && parsedJson.content.length > 500)) {
-                setLargeContentData(parsedJson as ChartContent | ImageContent);
+        // Try to parse complete JSON objects
+        const jsonMatches = accumulatedContent.match(/\{[\s\S]*?\}(?=\{|$)/g);
+        if (jsonMatches) {
+          jsonMatches.forEach(match => {
+            try {
+              const parsed = JSON.parse(match);
+              if (parsed.type) {
+                currentBotContent = [parsed];
+                if (['chart', 'image'].includes(parsed.type)) {
+                  setLargeContentData(parsed);
+                }
+              }
+            } catch (e) {
+              // If JSON parsing fails, treat as text
+              currentBotContent = [{ type: 'text', content: match }];
             }
-            // Once structured content is fully parsed, we can consider it complete.
-            // In a real stream, you might need a more robust partial JSON parser.
-            setMessages((prevMessages) =>
-                prevMessages.map((msg) =>
-                    msg.id === botMessageId
-                        ? { ...msg, content: currentBotContent, timestamp: new Date() }
-                        : msg
-                )
-            );
-            accumulatedContent = ''; // Clear for next potential structured output
-            break; // Stop reading if a complete structured object was found
-          }
-        } catch (jsonError) {
-          // Not a complete JSON object yet, or it's plain text/markdown
-          // Continue accumulating and treating as markdown for now
+          });
+        } else {
           currentBotContent = [{ type: 'text', content: accumulatedContent }];
-          setMessages((prevMessages) =>
-            prevMessages.map((msg) =>
-              msg.id === botMessageId
-                ? { ...msg, content: currentBotContent, timestamp: new Date() }
-                : msg
-            )
-          );
         }
+
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === botMessageId 
+              ? { ...msg, content: currentBotContent } 
+              : msg
+          )
+        );
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      // Add an error message bubble
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          id: uuidv4(),
-          role: 'assistant',
-          content: [{ type: 'text', content: `Error: Failed to get response. ${error instanceof Error ? error.message : String(error)}` }],
-          timestamp: new Date(),
-        },
-      ]);
+      console.error('Error:', error);
+      setMessages(prev => [...prev, {
+        id: uuidv4(),
+        role: 'assistant',
+        content: [{ 
+          type: 'text', 
+          content: 'Sorry, I encountered an error. Please try again.' 
+        }],
+        timestamp: new Date(),
+      }]);
     } finally {
       setIsLoading(false);
       scrollToBottom();
     }
   };
 
-  const handleCloseLargeContent = () => {
-    setLargeContentData(null);
-  };
+
+  const handleCloseLargeContent = () => setLargeContentData(null);
 
   return (
     <div className={`flex flex-1 ${largeContentData ? 'md:grid md:grid-cols-2' : 'flex'} gap-4 p-4 h-full`}>
-      {/* Main Chat Window */}
       <div className={`flex-1 flex flex-col min-h-full ${largeContentData ? 'md:border-r md:pr-4' : ''}`}>
         <ChatWindow
+          chatId={chatId || uuidv4()}
           messages={messages}
           inputMessage={inputMessage}
           setInputMessage={setInputMessage}
           onSendMessage={handleSendMessage}
           isLoading={isLoading}
           messagesEndRef={messagesEndRef}
+          updateChatTitle={updateChatTitle}
         />
       </div>
 
-      {/* Side Panel for Large Content */}
       {largeContentData && (
-        <ScrollArea className="hidden md:block w-full md:w-1/2 p-4 border-l border-gray-200 dark:border-gray-700 rounded-lg bg-card text-card-foreground shadow-sm">
+        <ScrollArea className="hidden md:block w-full md:w-1/2 p-4 border-l rounded-lg bg-card shadow-sm">
           <div className="flex justify-end mb-2">
             <button
               onClick={handleCloseLargeContent}
               className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Close large content view"
+              aria-label="Close"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <XIcon className="h-6 w-6" />
             </button>
           </div>
           <div className="prose dark:prose-invert max-w-none">
-            {largeContentData.type === 'image' && <ImageDisplay imageData={largeContentData} />}
-            {largeContentData.type === 'chart' && <ChartDisplay chartData={largeContentData} />}
-            {largeContentData.type === 'code' && (
-              <MarkdownRenderer content={`\`\`\`${largeContentData.language}\n${largeContentData.content}\n\`\`\``} />
+            {largeContentData.type === 'image' && (
+              <ImageDisplay imageData={largeContentData} />
             )}
-            {/* If you want to show large text in the split view: */}
+            {isChartContent(largeContentData) && (
+              <ChartDisplay chartData={largeContentData} />
+            )}
+            {largeContentData.type === 'code' && (
+              <MarkdownRenderer 
+                content={`\`\`\`${largeContentData.language}\n${largeContentData.content}\n\`\`\``} 
+              />
+            )}
             {largeContentData.type === 'text' && (
               <MarkdownRenderer content={largeContentData.content} />
             )}
-            {/* Add more types as needed */}
           </div>
         </ScrollArea>
       )}
     </div>
+  );
+}
+
+function XIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
   );
 }
