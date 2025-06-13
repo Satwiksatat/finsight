@@ -5,6 +5,7 @@ import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { cn } from '@/lib/utils';
 import { generateChatTitle } from "@/app/utils/ChatNaming";
+import { useChat } from '@/context/ChatContext';
 
 
 interface ChatWindowProps {
@@ -15,7 +16,6 @@ interface ChatWindowProps {
   onSendMessage: () => void;
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  updateChatTitle: (chatId: string, title: string) => void;
 }
 
 export function ChatWindow({
@@ -26,23 +26,24 @@ export function ChatWindow({
   onSendMessage,
   isLoading,
   messagesEndRef,
-  updateChatTitle}: ChatWindowProps) {
+}: ChatWindowProps) {
+  const { renameConversation } = useChat();
   const isEmpty = messages.length === 0;
 
   useEffect(() => {
     // Auto-generate title after first user message
     if (messages.length === 1 && messages[0].role === "user") {
       generateChatTitle(messages).then(title => {
-        updateChatTitle(chatId, title);
+        renameConversation(chatId, title);
       });
     }
     // Update title when conversation evolves
     else if (messages.length > 1 && messages.length % 3 === 0) {
       generateChatTitle(messages).then(title => {
-        updateChatTitle(chatId, title);
+        renameConversation(chatId, title);
       });
     }
-  }, [messages, chatId, updateChatTitle]);
+  }, [messages, chatId, renameConversation]);
 
     
   const handleAttachFile = () => {

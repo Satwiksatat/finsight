@@ -225,7 +225,6 @@ export function Sidebar() {
           <Button
             onClick={() => {
               startNewChat();
-              setActiveChatId(null); // Clear active chat when starting a new one
             }}
             className="w-full justify-start mb-2 bg-transparent text-foreground hover:bg-muted-foreground/10 font-medium">
 
