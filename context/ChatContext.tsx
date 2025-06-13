@@ -78,16 +78,10 @@ const archiveConversation = (id: string) => {
 };
 
 
+  // Start a new chat session but don't add it to the conversation list yet.
+  // The conversation will be added when the user sends the first message.
   const startNewChat = () => {
     const newId = uuidv4();
-    const newConversation: Conversation = {
-      id: newId,
-      title: 'New Chat',
-      lastMessageSnippet: '',
-      timestamp: new Date(),
-      messages: undefined
-    };
-    addConversation(newConversation);
     setActiveChatId(newId);
   };
 
