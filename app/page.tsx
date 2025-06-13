@@ -7,19 +7,12 @@ import { ChatMessage, LLMContent, ChartContent, ImageContent } from '@/lib/types
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChat } from '@/context/ChatContext'; // To manage active chat
-import { generateChatTitle } from '@/lib/chatTitle';
 import { MarkdownRenderer } from '@/components/common/MarkDownRenderer';
 import { ImageDisplay } from '@/components/common/ImageDisplay';
 import { ChartDisplay } from '@/components/common/ChartDisplay';
 
 export default function HomePage() {
-  const {
-    activeChatId,
-    setActiveChatId,
-    conversations,
-    addConversation,
-    updateConversation,
-  } = useChat(); // Manage chat state
+  const { activeChatId } = useChat(); // Get active chat ID from context
 
   // Local state for the current chat's messages
   // In a real app, messages would be loaded from a database based on activeChatId
@@ -49,29 +42,6 @@ export default function HomePage() {
 
   const handleSendMessage = async () => {
     if (inputMessage.trim() === '') return;
-
-    // Ensure the conversation exists. If this is the first message in a new chat
-    // create a conversation entry and generate a title for it.
-    let chatId = activeChatId || uuidv4();
-    if (!activeChatId) {
-      setActiveChatId(chatId);
-    }
-    const existing = conversations.find((c) => c.id === chatId);
-    if (!existing) {
-      addConversation({
-        id: chatId,
-        title: generateChatTitle(inputMessage),
-        createdAt: new Date(),
-        lastMessageSnippet: inputMessage.slice(0, 30),
-        timestamp: new Date(),
-        messages: undefined,
-      });
-    } else {
-      updateConversation(chatId, {
-        lastMessageSnippet: inputMessage.slice(0, 30),
-        timestamp: new Date(),
-      });
-    }
 
     const userMessage: ChatMessage = {
       id: uuidv4(),
