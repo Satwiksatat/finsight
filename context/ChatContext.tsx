@@ -52,8 +52,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     );
   };
   const renameConversation = (id: string, newTitle: string) => {
-    updateConversation(id, { title: newTitle });
-  };
+  updateConversation(id, { title: newTitle });
+};
 
 const deleteConversation = (id: string) => {
   setConversations((prev) => {
@@ -84,8 +84,9 @@ const archiveConversation = (id: string) => {
       id: newId,
       title: 'New Chat',
       lastMessageSnippet: '',
-      createdAt: new Date(),
-      messages: []
+      timestamp: new Date(),
+      messages: undefined,
+      createdAt: new Date()
     };
     addConversation(newConversation);
     setActiveChatId(newId);
