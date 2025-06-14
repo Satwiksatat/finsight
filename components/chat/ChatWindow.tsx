@@ -55,10 +55,6 @@ export function ChatWindow({
   const handleAttachFile = () => console.log('Attach file');
   const handleAttachImage = () => console.log('Attach image');
 
-  const handleConversationClick = (chatId: string) => {
-    if (!isMounted) return;
-    setActiveChatId(chatId);
-  }
 
   if (!isMounted) {
     return (
@@ -157,6 +153,3 @@ export function ChatWindow({
   );
 }
 
-function setActiveChatId(chatId: string) {
-  throw new Error('Function not implemented.');
-}
