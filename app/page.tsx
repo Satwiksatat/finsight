@@ -15,7 +15,8 @@ export default function HomePage() {
   const {
     activeChatId,
     conversations,
-    startNewChat
+    startNewChat,
+    updateConversation
   } = useChat();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -67,22 +68,31 @@ export default function HomePage() {
   };
 
   const handleSendMessage = async () => {
-  if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim() || isLoading) return;
 
-  const userMessage: ChatMessage = {
-    id: uuidv4(),
-    role: 'user',
-    content: [{ type: 'text', content: inputMessage.trim() }],
-    timestamp: new Date(),
-  };
+    const userMessage: ChatMessage = {
+      id: uuidv4(),
+      role: 'user',
+      content: [{ type: 'text', content: inputMessage.trim() }],
+      timestamp: new Date(),
+    };
 
-  // Create new chat if none exists
-  if (!activeChatId) {
-    startNewChat();
-    return; // Wait for chat to be created
-  }
+    let chatId = activeChatId;
+    if (!chatId) {
+      chatId = startNewChat();
+    }
 
-  setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => {
+      const updated = [...prev, userMessage];
+      if (chatId) {
+        updateConversation(chatId, {
+          messages: updated,
+          lastMessageSnippet: getMessageTextContent(userMessage),
+          lastMessageAt: new Date(),
+        });
+      }
+      return updated;
+    });
   setInputMessage('');
   setIsLoading(true);
   setLargeContentData(null);
@@ -98,7 +108,7 @@ export default function HomePage() {
           role: msg.role,
           content: msg.content.find(c => c.type === 'text')?.content || ''
         })),
-        chatId: activeChatId
+        chatId: chatId
       }),
     });
 
@@ -140,24 +150,46 @@ export default function HomePage() {
       );
       scrollToBottom();
     }
-    setMessages(prev =>
-      prev.map(m => (m.id === assistantId ? { ...m, isStreaming: false } : m))
-    );
+    setMessages(prev => {
+      const finalMessages = prev.map(m =>
+        m.id === assistantId ? { ...m, isStreaming: false } : m
+      );
+      if (chatId) {
+        const last = finalMessages[finalMessages.length - 1];
+        updateConversation(chatId, {
+          messages: finalMessages,
+          lastMessageSnippet: getMessageTextContent(last),
+          lastMessageAt: new Date(),
+        });
+      }
+      return finalMessages;
+    });
   } catch (error) {
     console.error('Full error details:', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     });
     
-    setMessages(prev => [...prev, {
-      id: uuidv4(),
-      role: 'assistant',
-      content: [{ 
-        type: 'text', 
-        content: 'Failed to connect to the chat service. Please try again.' 
-      }],
-      timestamp: new Date(),
-    }]);
+    setMessages(prev => {
+      const errorMsg: ChatMessage = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: [{
+          type: 'text',
+          content: 'Failed to connect to the chat service. Please try again.'
+        }],
+        timestamp: new Date(),
+      };
+      const updated = [...prev, errorMsg];
+      if (chatId) {
+        updateConversation(chatId, {
+          messages: updated,
+          lastMessageSnippet: getMessageTextContent(errorMsg),
+          lastMessageAt: new Date(),
+        });
+      }
+      return updated;
+    });
   } finally {
     setIsLoading(false);
     scrollToBottom();

@@ -106,10 +106,12 @@ export function ChatWindow({
         )}
       </div>
 
-      <div className={cn(
-        'flex-1 overflow-auto p-4',
-        isEmpty ? 'flex items-center justify-center' : ''
-      )}>
+      <div
+        className={cn(
+          'flex-1 flex flex-col overflow-hidden',
+          isEmpty ? 'items-center justify-center p-4' : ''
+        )}
+      >
         {!isEmpty ? (
           <>
             <ChatMessages messages={messages} messagesEndRef={messagesEndRef} />

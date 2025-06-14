@@ -1,7 +1,7 @@
 // components/chat/ChatMessages.tsx
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ChatMessage } from '@/lib/types';
 import { MessageBubble } from './MessageBubble';
 
@@ -11,14 +11,6 @@ interface ChatMessagesProps {
 }
 
 export function ChatMessages({ messages, messagesEndRef }: ChatMessagesProps) {
-  // Debugging effect
-  useEffect(() => {
-    console.log('Messages in ChatMessages:', {
-      count: messages.length,
-      sample: messages[0],
-      all: messages
-    });
-  }, [messages]);
 
   if (messages.length === 0) {
     return (
