@@ -25,27 +25,19 @@ export default function HomePage() {
   const [largeContentData, setLargeContentData] = useState<LLMContent | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load messages when chat changes
+  // Load messages when switching chats but avoid interfering while streaming
   useEffect(() => {
-    const loadMessages = async () => {
-      try {
-        setIsLoading(true);
-        const currentChat = conversations.find(c => c.id === activeChatId);
-        setMessages(currentChat?.messages || []);
-      } catch (error) {
-        console.error('Failed to load messages:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (activeChatId) {
-      loadMessages();
-    } else {
+    if (!activeChatId) {
       setMessages([]);
+      setLargeContentData(null);
+      return;
     }
+    if (isLoading) return;
+
+    const currentChat = conversations.find(c => c.id === activeChatId);
+    setMessages(currentChat?.messages || []);
     setLargeContentData(null);
-  }, [activeChatId, conversations]);
+  }, [activeChatId, conversations, isLoading]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
