@@ -39,9 +39,6 @@ import {
 import { toast } from 'sonner';
 import { Conversation } from '@/lib/types';
 
-
-
-
 export function Sidebar() {
   const {
     conversations,

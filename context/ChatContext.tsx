@@ -1,8 +1,7 @@
-// context/ChatContext.tsx
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'; // Import useEffect
-import { Conversation } from '@/lib/types';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { Conversation, ChatMessage } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ChatContextType {
@@ -11,113 +10,170 @@ interface ChatContextType {
   conversations: Conversation[];
   addConversation: (conversation: Conversation) => void;
   updateConversation: (id: string, updates: Partial<Conversation>) => void;
-  startNewChat: () => void;
-    renameConversation: (id: string, newTitle: string) => void;
+  updateChatTitle: (id: string, newTitle: string) => void;
+  startNewChat: () => string; // Now returns the new chat ID
+  renameConversation: (id: string, newTitle: string) => void;
   deleteConversation: (id: string) => void;
-  archiveConversation: (id: string) => void; // Optional: depends on implementation
-
+  archiveConversation: (id: string) => void;
+  isGeneratingTitle: boolean;
+  generateTitleForChat: (chatId: string, messages: ChatMessage[]) => Promise<boolean>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize to empty array on server (and first client render)
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false); // New state to track if on client
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  // Load conversations from localStorage ONLY on the client after mount
+  // Load from localStorage
   useEffect(() => {
-    setIsClient(true); // Mark that we are on the client
-    const storedConversations = localStorage.getItem('chatConversations');
-    if (storedConversations) {
-      setConversations(JSON.parse(storedConversations));
-    }
-  }, []); // Run once on client mount
-
-  // Save conversations to localStorage whenever they change, but only on client
-  useEffect(() => {
-    if (isClient) { // Only save if we are on the client
-      localStorage.setItem('chatConversations', JSON.stringify(conversations));
-    }
-  }, [conversations, isClient]); // Depend on conversations and isClient
-
-  const addConversation = (conversation: Conversation) => {
-    setConversations((prev) => [...prev, conversation]);
-  };
-
-  const updateConversation = (id: string, updates: Partial<Conversation>) => {
-    setConversations((prev) =>
-      prev.map((conv) => (conv.id === id ? { ...conv, ...updates } : conv))
-    );
-  };
-  const renameConversation = (id: string, newTitle: string) => {
-  updateConversation(id, { title: newTitle });
-};
-
-const deleteConversation = (id: string) => {
-  setConversations((prev) => {
-    const filtered = prev.filter((conv) => conv.id !== id);
-
-    // If the active conversation is deleted, reset the active ID
-    if (activeChatId === id) {
-      if (filtered.length > 0) {
-        setActiveChatId(filtered[filtered.length - 1].id);
-      } else {
-        setActiveChatId(null);
+    setIsClient(true);
+    const stored = localStorage.getItem('chatConversations');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        // Migrate old conversations
+        const migrated = parsed.map((conv: any) => ({
+          ...conv,
+          isTitleGenerated: conv.isTitleGenerated || false,
+          createdAt: new Date(conv.createdAt),
+          lastUpdated: conv.lastUpdated ? new Date(conv.lastUpdated) : new Date()
+        }));
+        setConversations(migrated);
+      } catch (e) {
+        console.error('Failed to parse stored conversations', e);
       }
     }
+  }, []);
 
-    return filtered;
-  });
-};
+  // Persist to localStorage
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem('chatConversations', JSON.stringify(conversations));
+    }
+  }, [conversations, isClient]);
 
-const archiveConversation = (id: string) => {
-  // Example: just update with an `archived: true` flag (you must extend Conversation type for this)
-  updateConversation(id, { archived: true });
-};
+  const addConversation = useCallback((conversation: Conversation) => {
+    setConversations(prev => [...prev, conversation]);
+  }, []);
 
+  const updateConversation = useCallback((id: string, updates: Partial<Conversation>) => {
+    setConversations(prev =>
+      prev.map(conv => 
+        conv.id === id ? { 
+          ...conv, 
+          ...updates,
+          lastUpdated: new Date() 
+        } : conv
+      )
+    );
+  }, []);
 
-  const startNewChat = () => {
+  const renameConversation = useCallback((id: string, newTitle: string) => {
+    updateConversation(id, { 
+      title: newTitle,
+      isTitleGenerated: false // Mark as user-edited
+    });
+  }, [updateConversation]);
+
+  const updateChatTitle = useCallback((id: string, newTitle: string) => {
+    updateConversation(id, { 
+      title: newTitle,
+      isTitleGenerated: true 
+    });
+  }, [updateConversation]);
+
+  const generateTitleForChat = useCallback(async (chatId: string, messages: ChatMessage[]) => {
+  if (!messages.length || isGeneratingTitle) return false;
+  
+  setIsGeneratingTitle(true);
+  try {
+    const res = await fetch('/api/chat/generate-title', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages }),
+    });
+
+    if (res.ok) {
+      const { title } = await res.json();
+      if (title) {
+        updateChatTitle(chatId, title);
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Title generation failed:', error);
+    return false;
+  } finally {
+    setIsGeneratingTitle(false);
+  }
+}, [isGeneratingTitle, updateChatTitle]);
+
+  const deleteConversation = useCallback((id: string) => {
+    setConversations(prev => {
+      const filtered = prev.filter(conv => conv.id !== id);
+      if (activeChatId === id) {
+        setActiveChatId(filtered.length ? filtered[0].id : null);
+      }
+      return filtered;
+    });
+  }, [activeChatId]);
+
+  const archiveConversation = useCallback((id: string) => {
+    updateConversation(id, { archived: true });
+  }, [updateConversation]);
+
+  const startNewChat = useCallback(() => {
     const newId = uuidv4();
     const newConversation: Conversation = {
       id: newId,
       title: 'New Chat',
       lastMessageSnippet: '',
-      timestamp: new Date(),
-      messages: undefined,
-      createdAt: new Date()
+      messages: [],
+      createdAt: new Date(),
+      archived: false,
+      isTitleGenerated: false,
+      lastUpdated: new Date()
     };
     addConversation(newConversation);
     setActiveChatId(newId);
-  };
+    return newId;
+  }, [addConversation]);
 
-  // Logic to set active chat, also needs to consider client-side only
+  // Auto-select or create at first load
   useEffect(() => {
-    if (isClient) { // Ensure this only runs client-side after hydration
-        if (!activeChatId && conversations.length === 0) {
-            startNewChat();
-        } else if (!activeChatId && conversations.length > 0) {
-            setActiveChatId(conversations[conversations.length - 1].id);
-        }
+    if (!isClient || activeChatId !== null) return;
+    
+    if (conversations.length === 0) {
+      startNewChat();
+    } else {
+      // Select most recently updated conversation
+      const mostRecent = [...conversations].sort(
+        (a, b) => (b.lastUpdated?.getTime() || 0) - (a.lastUpdated?.getTime() || 0)
+      )[0];
+      setActiveChatId(mostRecent.id);
     }
-  }, [activeChatId, conversations, isClient]);
-
+  }, [isClient, activeChatId, conversations, startNewChat]);
 
   return (
     <ChatContext.Provider
       value={{
-            activeChatId,
-            setActiveChatId,
-            conversations,
-            addConversation,
-            updateConversation,
-            startNewChat,
-            renameConversation,
-            deleteConversation,
-            archiveConversation
-        }}
-
+        activeChatId,
+        setActiveChatId,
+        conversations,
+        addConversation,
+        updateConversation,
+        updateChatTitle,
+        startNewChat,
+        renameConversation: renameConversation,
+        deleteConversation,
+        archiveConversation,
+        isGeneratingTitle,
+        generateTitleForChat,
+      }}
     >
       {children}
     </ChatContext.Provider>
@@ -126,8 +182,6 @@ const archiveConversation = (id: string) => {
 
 export const useChat = () => {
   const context = useContext(ChatContext);
-  if (context === undefined) {
-    throw new Error('useChat must be used within a ChatProvider');
-  }
+  if (!context) throw new Error('useChat must be used within a ChatProvider');
   return context;
 };
