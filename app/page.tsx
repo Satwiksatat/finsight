@@ -1,4 +1,3 @@
-// app/page.tsx
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -25,19 +24,14 @@ export default function HomePage() {
   const [largeContentData, setLargeContentData] = useState<LLMContent | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load messages when switching chats but avoid interfering while streaming
+  // Load initial messages only if not already present and not streaming
   useEffect(() => {
-    if (!activeChatId) {
-      setMessages([]);
-      setLargeContentData(null);
-      return;
-    }
-    if (isLoading) return;
+    if (!activeChatId || isLoading || messages.length > 0) return;
 
     const currentChat = conversations.find(c => c.id === activeChatId);
     setMessages(currentChat?.messages || []);
     setLargeContentData(null);
-  }, [activeChatId, conversations, isLoading]);
+  }, [activeChatId, conversations, isLoading, messages.length]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,7 +47,6 @@ export default function HomePage() {
     );
   };
 
-  // Helper function to extract text content from message
   const getMessageTextContent = (message: ChatMessage): string => {
     const textContent = message.content.find(isTextContent);
     return textContent?.content || '';
@@ -76,6 +69,7 @@ export default function HomePage() {
 
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
+
     if (chatId) {
       updateConversation(chatId, {
         messages: updatedMessages,
@@ -83,110 +77,114 @@ export default function HomePage() {
         lastMessageAt: new Date(),
       });
     }
-  setInputMessage('');
-  setIsLoading(true);
-  setLargeContentData(null);
 
-  try {
-    console.log('Sending request to /api/chat'); // Debug log
-    
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [...messages, userMessage].map(msg => ({
-          role: msg.role,
-          content: msg.content.find(c => c.type === 'text')?.content || ''
-        })),
-        chatId: chatId
-      }),
-    });
+    setInputMessage('');
+    setIsLoading(true);
+    setLargeContentData(null);
 
-    console.log('Received response:', response.status); // Debug log
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: updatedMessages.map(msg => ({
+            role: msg.role,
+            content: msg.content.find(c => c.type === 'text')?.content || ''
+          })),
+          chatId: chatId
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    if (!response.body) {
-      throw new Error('Response body is empty');
-    }
+      if (!response.body) {
+        throw new Error('Response body is empty');
+      }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-    const assistantId = uuidv4();
-    let assistantContent = '';
-    const assistantMessage: ChatMessage = {
-      id: assistantId,
-      role: 'assistant',
-      content: [{ type: 'text', content: '' }],
-      timestamp: new Date(),
-      isStreaming: true,
-    };
+      const assistantId = uuidv4();
+      let assistantContent = '';
+      const assistantMessage: ChatMessage = {
+        id: assistantId,
+        role: 'assistant',
+        content: [{ type: 'text', content: '' }],
+        timestamp: new Date(),
+        isStreaming: true,
+      };
 
-    setMessages(prev => [...prev, assistantMessage]);
+      setMessages(prev => [...prev, assistantMessage]);
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      assistantContent += decoder.decode(value, { stream: true });
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === assistantId
-            ? { ...m, content: [{ type: 'text', content: assistantContent }] }
-            : m
-        )
-      );
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        assistantContent += decoder.decode(value, { stream: true });
+
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === assistantId
+              ? { ...m, content: [{ type: 'text', content: assistantContent }] }
+              : m
+          )
+        );
+        scrollToBottom();
+      }
+
+      // Finalize message state after stream ends
+      let finalMessages: ChatMessage[] = [];
+      setMessages(prev => {
+        finalMessages = prev.map(m =>
+          m.id === assistantId ? { ...m, isStreaming: false } : m
+        );
+        return finalMessages;
+      });
+
+      if (chatId) {
+        const last = finalMessages[finalMessages.length - 1];
+        updateConversation(chatId, {
+          messages: finalMessages,
+          lastMessageSnippet: getMessageTextContent(last),
+          lastMessageAt: new Date(),
+        });
+      }
+    } catch (error) {
+      console.error('Full error details:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
+      const errorMsg: ChatMessage = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: [{
+          type: 'text',
+          content: 'Failed to connect to the chat service. Please try again.'
+        }],
+        timestamp: new Date(),
+      };
+
+      let updated: ChatMessage[] = [];
+      setMessages(prev => {
+        updated = [...prev, errorMsg];
+        return updated;
+      });
+
+      if (chatId) {
+        updateConversation(chatId, {
+          messages: updated,
+          lastMessageSnippet: getMessageTextContent(errorMsg),
+          lastMessageAt: new Date(),
+        });
+      }
+    } finally {
+      setIsLoading(false);
       scrollToBottom();
     }
-    let finalMessages: ChatMessage[] = [];
-    setMessages(prev => {
-      finalMessages = prev.map(m =>
-        m.id === assistantId ? { ...m, isStreaming: false } : m
-      );
-      return finalMessages;
-    });
-    if (chatId) {
-      const last = finalMessages[finalMessages.length - 1];
-      updateConversation(chatId, {
-        messages: finalMessages,
-        lastMessageSnippet: getMessageTextContent(last),
-        lastMessageAt: new Date(),
-      });
-    }
-  } catch (error) {
-    console.error('Full error details:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    
-    const errorMsg: ChatMessage = {
-      id: uuidv4(),
-      role: 'assistant',
-      content: [{
-        type: 'text',
-        content: 'Failed to connect to the chat service. Please try again.'
-      }],
-      timestamp: new Date(),
-    };
-    let updated: ChatMessage[] = [];
-    setMessages(prev => {
-      updated = [...prev, errorMsg];
-      return updated;
-    });
-    if (chatId) {
-      updateConversation(chatId, {
-        messages: updated,
-        lastMessageSnippet: getMessageTextContent(errorMsg),
-        lastMessageAt: new Date(),
-      });
-    }
-  } finally {
-    setIsLoading(false);
-    scrollToBottom();
-  }
-};
+  };
 
   const handleCloseLargeContent = () => setLargeContentData(null);
 
@@ -224,16 +222,10 @@ export default function HomePage() {
             </button>
           </div>
           <div className="prose dark:prose-invert max-w-none">
-            {largeContentData.type === 'image' && (
-              <ImageDisplay imageData={largeContentData} />
-            )}
-            {isChartContent(largeContentData) && (
-              <ChartDisplay chartData={largeContentData} />
-            )}
+            {largeContentData.type === 'image' && <ImageDisplay imageData={largeContentData} />}
+            {isChartContent(largeContentData) && <ChartDisplay chartData={largeContentData} />}
             {largeContentData.type === 'code' && (
-              <MarkdownRenderer 
-                content={`\`\`\`${largeContentData.language}\n${largeContentData.content}\n\`\`\``} 
-              />
+              <MarkdownRenderer content={`\`\`\`${largeContentData.language}\n${largeContentData.content}\n\`\`\``} />
             )}
             {largeContentData.type === 'text' && (
               <MarkdownRenderer content={largeContentData.content} />
