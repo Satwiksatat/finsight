@@ -112,7 +112,37 @@ export default function HomePage() {
       throw new Error('Response body is empty');
     }
 
-    // ... rest of your streaming logic ...
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    const assistantId = uuidv4();
+    let assistantContent = '';
+    const assistantMessage: ChatMessage = {
+      id: assistantId,
+      role: 'assistant',
+      content: [{ type: 'text', content: '' }],
+      timestamp: new Date(),
+      isStreaming: true,
+    };
+
+    setMessages(prev => [...prev, assistantMessage]);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      assistantContent += decoder.decode(value, { stream: true });
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === assistantId
+            ? { ...m, content: [{ type: 'text', content: assistantContent }] }
+            : m
+        )
+      );
+      scrollToBottom();
+    }
+    setMessages(prev =>
+      prev.map(m => (m.id === assistantId ? { ...m, isStreaming: false } : m))
+    );
   } catch (error) {
     console.error('Full error details:', {
       error: error instanceof Error ? error.message : 'Unknown error',
