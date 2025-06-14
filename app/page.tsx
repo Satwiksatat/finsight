@@ -82,17 +82,15 @@ export default function HomePage() {
       chatId = startNewChat();
     }
 
-    setMessages(prev => {
-      const updated = [...prev, userMessage];
-      if (chatId) {
-        updateConversation(chatId, {
-          messages: updated,
-          lastMessageSnippet: getMessageTextContent(userMessage),
-          lastMessageAt: new Date(),
-        });
-      }
-      return updated;
-    });
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    if (chatId) {
+      updateConversation(chatId, {
+        messages: updatedMessages,
+        lastMessageSnippet: getMessageTextContent(userMessage),
+        lastMessageAt: new Date(),
+      });
+    }
   setInputMessage('');
   setIsLoading(true);
   setLargeContentData(null);
@@ -150,46 +148,48 @@ export default function HomePage() {
       );
       scrollToBottom();
     }
+    let finalMessages: ChatMessage[] = [];
     setMessages(prev => {
-      const finalMessages = prev.map(m =>
+      finalMessages = prev.map(m =>
         m.id === assistantId ? { ...m, isStreaming: false } : m
       );
-      if (chatId) {
-        const last = finalMessages[finalMessages.length - 1];
-        updateConversation(chatId, {
-          messages: finalMessages,
-          lastMessageSnippet: getMessageTextContent(last),
-          lastMessageAt: new Date(),
-        });
-      }
       return finalMessages;
     });
+    if (chatId) {
+      const last = finalMessages[finalMessages.length - 1];
+      updateConversation(chatId, {
+        messages: finalMessages,
+        lastMessageSnippet: getMessageTextContent(last),
+        lastMessageAt: new Date(),
+      });
+    }
   } catch (error) {
     console.error('Full error details:', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     });
     
+    const errorMsg: ChatMessage = {
+      id: uuidv4(),
+      role: 'assistant',
+      content: [{
+        type: 'text',
+        content: 'Failed to connect to the chat service. Please try again.'
+      }],
+      timestamp: new Date(),
+    };
+    let updated: ChatMessage[] = [];
     setMessages(prev => {
-      const errorMsg: ChatMessage = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: [{
-          type: 'text',
-          content: 'Failed to connect to the chat service. Please try again.'
-        }],
-        timestamp: new Date(),
-      };
-      const updated = [...prev, errorMsg];
-      if (chatId) {
-        updateConversation(chatId, {
-          messages: updated,
-          lastMessageSnippet: getMessageTextContent(errorMsg),
-          lastMessageAt: new Date(),
-        });
-      }
+      updated = [...prev, errorMsg];
       return updated;
     });
+    if (chatId) {
+      updateConversation(chatId, {
+        messages: updated,
+        lastMessageSnippet: getMessageTextContent(errorMsg),
+        lastMessageAt: new Date(),
+      });
+    }
   } finally {
     setIsLoading(false);
     scrollToBottom();
