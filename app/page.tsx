@@ -11,6 +11,7 @@ import { ImageDisplay } from '@/components/common/ImageDisplay';
 import { ChartDisplay } from '@/components/common/ChartDisplay';
 
 export default function HomePage() {
+  const [isHydrated, setIsHydrated] = useState(false);
   const {
     activeChatId,
     conversations,
@@ -24,14 +25,28 @@ export default function HomePage() {
   const [largeContentData, setLargeContentData] = useState<LLMContent | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load initial messages only if not already present and not streaming
   useEffect(() => {
-    if (!activeChatId || isLoading || messages.length > 0) return;
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!activeChatId || isLoading) return;
 
     const currentChat = conversations.find(c => c.id === activeChatId);
-    setMessages(currentChat?.messages || []);
+    if (currentChat) {
+      setMessages(currentChat.messages || []);
+    } else {
+      setMessages([]);
+    }
     setLargeContentData(null);
-  }, [activeChatId, conversations, isLoading, messages.length]);
+  }, [activeChatId, conversations, isLoading]);
+
+  useEffect(() => {
+    if (!activeChatId) {
+      setMessages([]);
+      setLargeContentData(null);
+    }
+  }, [activeChatId]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -95,19 +110,14 @@ export default function HomePage() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      if (!response.body) {
-        throw new Error('Response body is empty');
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.body) throw new Error('Response body is empty');
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-
       const assistantId = uuidv4();
       let assistantContent = '';
+
       const assistantMessage: ChatMessage = {
         id: assistantId,
         role: 'assistant',
@@ -121,25 +131,18 @@ export default function HomePage() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         assistantContent += decoder.decode(value, { stream: true });
-
         setMessages(prev =>
-          prev.map(m =>
-            m.id === assistantId
-              ? { ...m, content: [{ type: 'text', content: assistantContent }] }
-              : m
-          )
+          prev.map(m => m.id === assistantId
+            ? { ...m, content: [{ type: 'text', content: assistantContent }] }
+            : m)
         );
         scrollToBottom();
       }
 
-      // Finalize message state after stream ends
       let finalMessages: ChatMessage[] = [];
       setMessages(prev => {
-        finalMessages = prev.map(m =>
-          m.id === assistantId ? { ...m, isStreaming: false } : m
-        );
+        finalMessages = prev.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m);
         return finalMessages;
       });
 
@@ -152,18 +155,10 @@ export default function HomePage() {
         });
       }
     } catch (error) {
-      console.error('Full error details:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
-
       const errorMsg: ChatMessage = {
         id: uuidv4(),
         role: 'assistant',
-        content: [{
-          type: 'text',
-          content: 'Failed to connect to the chat service. Please try again.'
-        }],
+        content: [{ type: 'text', content: 'Failed to connect to the chat service. Please try again.' }],
         timestamp: new Date(),
       };
 
@@ -188,6 +183,14 @@ export default function HomePage() {
 
   const handleCloseLargeContent = () => setLargeContentData(null);
 
+  if (!isHydrated) {
+    return (
+      <div className="flex flex-1 p-4 h-full text-muted-foreground justify-center items-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className={`flex flex-1 ${largeContentData ? 'md:grid md:grid-cols-2' : 'flex'} gap-4 p-4 h-full`}>
       <div className={`flex-1 flex flex-col min-h-full ${largeContentData ? 'md:border-r md:pr-4' : ''}`}>
@@ -210,13 +213,7 @@ export default function HomePage() {
               className="text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Close"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                className="h-6 w-6"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -224,12 +221,13 @@ export default function HomePage() {
           <div className="prose dark:prose-invert max-w-none">
             {largeContentData.type === 'image' && <ImageDisplay imageData={largeContentData} />}
             {isChartContent(largeContentData) && <ChartDisplay chartData={largeContentData} />}
-            {largeContentData.type === 'code' && (
-              <MarkdownRenderer content={`\`\`\`${largeContentData.language}\n${largeContentData.content}\n\`\`\``} />
-            )}
-            {largeContentData.type === 'text' && (
-              <MarkdownRenderer content={largeContentData.content} />
-            )}
+           {largeContentData.type === 'code' && (
+  <MarkdownRenderer content={`\`\`\`${largeContentData.language}\n${largeContentData.content}\n\`\`\``} />
+)}
+{largeContentData.type === 'text' && (
+  <MarkdownRenderer content={largeContentData.content} />
+)}
+
           </div>
         </ScrollArea>
       )}

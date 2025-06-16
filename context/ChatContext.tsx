@@ -11,7 +11,7 @@ interface ChatContextType {
   addConversation: (conversation: Conversation) => void;
   updateConversation: (id: string, updates: Partial<Conversation>) => void;
   updateChatTitle: (id: string, newTitle: string) => void;
-  startNewChat: () => string; // Now returns the new chat ID
+  startNewChat: () => string;
   renameConversation: (id: string, newTitle: string) => void;
   deleteConversation: (id: string) => void;
   archiveConversation: (id: string) => void;
@@ -27,14 +27,20 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Load from localStorage
+  useEffect(() => {
+    if (activeChatId) {
+      localStorage.setItem('activeChatId', activeChatId);
+    } else {
+      localStorage.removeItem('activeChatId');
+    }
+  }, [activeChatId]);
+
   useEffect(() => {
     setIsClient(true);
     const stored = localStorage.getItem('chatConversations');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // Migrate old conversations
         const migrated = parsed.map((conv: any) => ({
           ...conv,
           isTitleGenerated: conv.isTitleGenerated || false,
@@ -48,7 +54,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Persist to localStorage
   useEffect(() => {
     if (isClient) {
       localStorage.setItem('chatConversations', JSON.stringify(conversations));
@@ -74,7 +79,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const renameConversation = useCallback((id: string, newTitle: string) => {
     updateConversation(id, { 
       title: newTitle,
-      isTitleGenerated: false // Mark as user-edited
+      isTitleGenerated: false 
     });
   }, [updateConversation]);
 
@@ -86,41 +91,41 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   }, [updateConversation]);
 
   const generateTitleForChat = useCallback(async (chatId: string, messages: ChatMessage[]) => {
-  if (!messages.length || isGeneratingTitle) return false;
-  
-  setIsGeneratingTitle(true);
-  try {
-    const res = await fetch('/api/chat/generate-title', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages }),
-    });
+    if (!messages.length || isGeneratingTitle) return false;
 
-    if (res.ok) {
-      const { title } = await res.json();
-      if (title) {
-        updateChatTitle(chatId, title);
-        return true;
+    setIsGeneratingTitle(true);
+    try {
+      const res = await fetch('/api/chat/generate-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (res.ok) {
+        const { title } = await res.json();
+        if (title) {
+          updateChatTitle(chatId, title);
+          return true;
+        }
       }
+      return false;
+    } catch (error) {
+      console.error('Title generation failed:', error);
+      return false;
+    } finally {
+      setIsGeneratingTitle(false);
     }
-    return false;
-  } catch (error) {
-    console.error('Title generation failed:', error);
-    return false;
-  } finally {
-    setIsGeneratingTitle(false);
-  }
-}, [isGeneratingTitle, updateChatTitle]);
+  }, [isGeneratingTitle, updateChatTitle]);
 
   const deleteConversation = useCallback((id: string) => {
-    setConversations(prev => {
-      const filtered = prev.filter(conv => conv.id !== id);
-      if (activeChatId === id) {
-        setActiveChatId(filtered.length ? filtered[0].id : null);
-      }
+    setConversations(prevConversations => {
+      const filtered = prevConversations.filter(conv => conv.id !== id);
+
+      setActiveChatId(prevId => (prevId === id ? (filtered[0]?.id ?? null) : prevId));
+
       return filtered;
     });
-  }, [activeChatId]);
+  }, []);
 
   const archiveConversation = useCallback((id: string) => {
     updateConversation(id, { archived: true });
@@ -143,20 +148,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     return newId;
   }, [addConversation]);
 
-  // Auto-select or create at first load
   useEffect(() => {
     if (!isClient || activeChatId !== null) return;
-    
-    if (conversations.length === 0) {
-      startNewChat();
-    } else {
-      // Select most recently updated conversation
-      const mostRecent = [...conversations].sort(
-        (a, b) => (b.lastUpdated?.getTime() || 0) - (a.lastUpdated?.getTime() || 0)
-      )[0];
-      setActiveChatId(mostRecent.id);
+
+    const storedActiveId = localStorage.getItem('activeChatId');
+
+    if (storedActiveId && conversations.find(c => c.id === storedActiveId)) {
+      setActiveChatId(storedActiveId);
     }
-  }, [isClient, activeChatId, conversations, startNewChat]);
+  }, [isClient, activeChatId, conversations]);
 
   return (
     <ChatContext.Provider
@@ -168,7 +168,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         updateConversation,
         updateChatTitle,
         startNewChat,
-        renameConversation: renameConversation,
+        renameConversation,
         deleteConversation,
         archiveConversation,
         isGeneratingTitle,
