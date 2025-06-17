@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react'; 
+import { useEffect, useState, useRef } from 'react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -83,13 +83,17 @@ export function Sidebar() {
     chatTitle: string;
   } | null>(null);
 
-  const [visibleConversations, setVisibleConversations] = useState<Conversation[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('conversations');
-      return saved ? JSON.parse(saved) : conversations.filter((c) => !c.archived);
+  const [visibleConversations, setVisibleConversations] = useState<Conversation[]>([]); // ✅ updated default
+
+  useEffect(() => {
+    const saved = localStorage.getItem('conversations');
+    if (saved) {
+      setVisibleConversations(JSON.parse(saved));
+    } else {
+      setVisibleConversations(conversations.filter((c) => !c.archived));
     }
-    return conversations.filter((c) => !c.archived);
-  });
+  }, [conversations]); // ✅ place this immediately after the useState
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [searchOverlayQuery, setSearchOverlayQuery] = useState('');
@@ -199,7 +203,7 @@ export function Sidebar() {
 
   // Handler for financial item actions
   const handleFinancialItemAction = (action: string, itemId: string) => {
-    switch(action) {
+    switch (action) {
       case 'rename':
         toast.info(`Renaming ${itemId}`);
         break;
@@ -214,6 +218,12 @@ export function Sidebar() {
         break;
     }
   };
+  const [showLogo, setShowLogo] = useState(false);
+
+  useEffect(() => {
+    setShowLogo(true); // This only runs on the client
+  }, []);
+
 
   return (
     <div
@@ -228,15 +238,17 @@ export function Sidebar() {
         {/* Only show logo when sidebar is not collapsed */}
         {!collapsed && (
           <div className="flex items-center">
-            <img
-              src="/images/cfo.avif" // Path to your logo (relative to public directory)
-              alt="CFO Logo"
-              className="h-10 w-auto mr-3" // Adjust height, width, and margin as needed
-            />
-            {/* You can add a title next to the logo if you want, e.g., <span>My App</span> */}
+            {showLogo && (
+              <img
+                src="/images/cfo.avif"
+                alt="CFO Logo"
+                className="h-10 w-auto mr-3"
+              />
+            )}
+
           </div>
         )}
-         <Tooltip content={collapsed ? 'Open Sidebar' : 'Close Sidebar'}>
+        <Tooltip content={collapsed ? 'Open Sidebar' : 'Close Sidebar'}>
           <button
             className={cn(
               "text-gray-600 text-lg",
@@ -359,7 +371,7 @@ export function Sidebar() {
                   {item.icon}
                   <span>{item.title}</span>
                 </div>
-                
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -376,7 +388,7 @@ export function Sidebar() {
                     <DropdownMenuItem onClick={() => handleFinancialItemAction('archive', item.id)}>
                       <Archive className="w-4 h-4 mr-2" /> Archive
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleFinancialItemAction('delete', item.id)}
                       className="text-red-500 focus:bg-red-100">
                       <Trash2 className="w-4 h-4 mr-2 text-red-500" /> Delete
