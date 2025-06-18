@@ -228,7 +228,7 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        'flex flex-col h-screen transition-all ease-in-out shrink-0 overflow-y-auto',
+        'flex flex-col h-screen transition-all ease-in-out shrink-0 overflow-y-auto sidebar-scroll',
         collapsed ? 'w-14 p-2' : 'w-64 p-4',
         'bg-sidebar',
       )}
