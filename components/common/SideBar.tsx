@@ -60,15 +60,16 @@ export function Sidebar() {
     chatTitle: string;
   } | null>(null);
 
-  // Existing state for sidebar search (can be removed if only using dialog search)
-  // I'm keeping it for now, assuming visibleConversations is still needed for the main sidebar display
-  const [visibleConversations, setVisibleConversations] = useState<Conversation[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('conversations');
-      return saved ? JSON.parse(saved) : conversations.filter((c) => !c.archived);
-    }
-    return conversations.filter((c) => !c.archived);
-  });
+
+  const [visibleConversations, setVisibleConversations] = useState<Conversation[]>(conversations.filter((c) => !c.archived));
+
+useEffect(() => {
+  const saved = localStorage.getItem('conversations');
+  if (saved) {
+    setVisibleConversations(JSON.parse(saved));
+  }
+}, []);
+
   const [searchQuery, setSearchQuery] = useState(''); // This is for the old search input, can be removed
   const inputRef = useRef<HTMLInputElement | null>(null);
 
