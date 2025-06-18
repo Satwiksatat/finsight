@@ -4,7 +4,9 @@ import { ChatMessage } from '@/lib/types';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { cn } from '@/lib/utils';
-import { generateChatTitle } from "@/app/utils/ChatNaming";
+import { generateChatTitle } from "@/app/api/utils/ChatNaming";
+import { useChat } from '@/context/ChatContext';
+
 
 interface ChatWindowProps {
   chatId: string;
@@ -14,7 +16,9 @@ interface ChatWindowProps {
   onSendMessage: () => void;
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  updateChatTitle: (id: string, title: string) => void; // ✅ This is the new line to add
 }
+
 
 export function ChatWindow({
   chatId,
@@ -26,8 +30,12 @@ export function ChatWindow({
   messagesEndRef,
   updateChatTitle,
 }: ChatWindowProps) {
+    const { conversations } = useChat(); // ✅ Add this here
+
+  
   const isEmpty = messages.length === 0;
   const currentConversation = conversations.find(c => c.id === chatId);
+  
 
   useEffect(() => {
     // Auto-generate title after the first user message

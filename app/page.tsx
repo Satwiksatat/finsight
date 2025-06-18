@@ -201,8 +201,9 @@ export default function HomePage() {
           setInputMessage={setInputMessage}
           onSendMessage={handleSendMessage}
           isLoading={isLoading}
-          messagesEndRef={messagesEndRef}
-        />
+          messagesEndRef={messagesEndRef} updateChatTitle={function (id: string, title: string): void {
+            throw new Error('Function not implemented.');
+          } }        />
       </div>
 
       {largeContentData && (

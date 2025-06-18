@@ -1,7 +1,5 @@
 // app/layout.tsx
 
-// app/layout.tsx
-
 import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -22,8 +20,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-screen bg-background text-foreground font-sans antialiased flex",
-          inter.variable // ✅ still works
+    "min-h-screen bg-background text-foreground font-sans antialiased flex flex-col",
+    inter.variable // ✅ still works
         )}
       >
         <ClientRootLayout>{children}</ClientRootLayout>
