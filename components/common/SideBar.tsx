@@ -226,13 +226,14 @@ export function Sidebar() {
 
 
   return (
-    <div
-      className={cn(
-        'flex flex-col h-screen transition-all ease-in-out shrink-0 overflow-y-auto sidebar-scroll',
-        collapsed ? 'w-14 p-2' : 'w-64 p-4',
-        'bg-sidebar',
-      )}
-    >
+    <div className={cn(
+      'flex flex-col h-screen transition-all ease-in-out shrink-0 overflow-y-auto sidebar-scroll',
+      collapsed ? 'w-14 p-2' : 'w-64 p-4',
+      'bg-[hsl(var(--sidebar-background))] dark:bg-[#1e1e1e]'
+
+, // light & dark mode background
+    )}>
+
       {/* Header */}
       <div className="flex items-center justify-between h-14 mb-4">
         {/* Only show logo when sidebar is not collapsed */}
@@ -240,7 +241,7 @@ export function Sidebar() {
           <div className="flex items-center">
             {showLogo && (
               <img
-                src="/images/cfo.avif"
+                src="images\cfo.png"
                 alt="CFO Logo"
                 className="h-10 w-auto mr-3"
               />
@@ -249,13 +250,13 @@ export function Sidebar() {
           </div>
         )}
         <Tooltip content={collapsed ? 'Open Sidebar' : 'Close Sidebar'}>
-          <button
-            className={cn(
-              "text-gray-600 text-lg",
-              collapsed ? "w-10 h-10" : "ml-auto w-10 h-10" // Adjust positioning based on collapsed state
-            )}
-            onClick={() => setCollapsed(!collapsed)}
-          >
+         <button
+              className={cn(
+                "text-[hsl(var(--foreground))] text-lg", // Use foreground color for visibility
+                collapsed ? "w-10 h-10" : "ml-auto w-10 h-10"
+              )}
+              onClick={() => setCollapsed(!collapsed)}
+            >
             {collapsed ? (
               <PiSidebarFill className="h-6 w-6 ml-2" />
             ) : (
@@ -273,15 +274,15 @@ export function Sidebar() {
               startNewChat();
               setActiveChatId(null);
             }}
-            className="w-full justify-start mb-2 bg-transparent text-foreground hover:bg-muted-foreground/10 font-medium">
-            <MessageCirclePlus className="w-4 h-4 text-foreground" />New Chat
+            className="w-full justify-start mb-2 bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] dark:hover:bg-muted-foreground/10 font-medium">
+            <MessageCirclePlus className="w-4 h-4 text-[hsl(var(--foreground))]" />New Chat
           </Button>
 
           <Button
-            className="w-full justify-start mb-2 bg-transparent text-foreground hover:bg-muted-foreground/10 font-medium"
+            className="w-full justify-start mb-2 bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] dark:hover:bg-muted-foreground/10 font-medium"
             onClick={() => setIsSearchDialogOpen(true)}
           >
-            <Search className="w-4 h-4 text-foreground" />Search chats
+            <Search className="w-4 h-4 text-[hsl(var(--foreground))]" />Search chats
           </Button>
         </div>
       )}
@@ -293,9 +294,9 @@ export function Sidebar() {
             <div
               key={chat.id}
               className={cn(
-                'flex items-center justify-between px-3 py-2 text-sm text-foreground cursor-pointer',
-                "hover:bg-muted-foreground/10",
-                activeChatId === chat.id ? 'bg-muted-foreground/10 font-semibold' : 'bg-transparent',
+                'flex items-center justify-between px-3 py-2 text-sm text-[hsl(var(--foreground))] cursor-pointer',
+                "hover:bg-[hsl(var(--accent))] dark:hover:bg-muted-foreground/10",
+                activeChatId === chat.id ? 'bg-[hsl(var(--muted))] dark:bg-muted-foreground/10 font-semibold' : 'bg-transparent',
                 'rounded-md'
               )}
               onClick={() => setActiveChatId(chat.id)}
@@ -357,13 +358,13 @@ export function Sidebar() {
         <>
           <Separator className="my-2" />
           <div className="flex flex-col gap-2 pr-2 flex-1">
-            <h3 className="text-xs font-semibold text-muted-foreground px-3 py-1">Financial Analysis</h3>
+            <h3 className="text-xs font-semibold text-[hsl(var(--foreground))] px-3 py-1">Financial Analysis</h3>
             {financialItems.map((item) => (
               <div
                 key={item.id}
                 className={cn(
-                  'flex items-center justify-between px-3 py-2 text-sm text-foreground cursor-pointer',
-                  "hover:bg-muted-foreground/10",
+                  'flex items-center justify-between px-3 py-2 text-sm text-[hsl(var(--foreground))] cursor-pointer',
+                  "hover:bg-[hsl(var(--accent))] dark:hover:bg-muted-foreground/10",
                   'rounded-md'
                 )}
               >

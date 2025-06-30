@@ -30,12 +30,12 @@ export function ChatWindow({
   messagesEndRef,
   updateChatTitle,
 }: ChatWindowProps) {
-    const { conversations } = useChat(); // ✅ Add this here
+  const { conversations } = useChat(); // ✅ Add this here
 
-  
+
   const isEmpty = messages.length === 0;
   const currentConversation = conversations.find(c => c.id === chatId);
-  
+
 
   useEffect(() => {
     // Auto-generate title after the first user message
@@ -68,7 +68,7 @@ export function ChatWindow({
                 <span>New Chat</span>
                 <span className="flex gap-1">
                   {[1, 2, 3].map(i => (
-                    <span 
+                    <span
                       key={`loading-${i}`}
                       className="w-1.5 h-1.5 rounded-full bg-muted-foreground opacity-60"
                       style={{ animation: `pulse 1.5s ease-in-out ${i * 0.2}s infinite` }}
@@ -91,14 +91,16 @@ export function ChatWindow({
         // LAYOUT 1: WHEN CHAT IS EMPTY - Center everything as one block
         // ===================================================================
         <div className="flex-1 flex flex-col justify-center items-center p-4">
-          <div className="w-full">
-            {/* Welcome message with margin-bottom to create space */}
-            <div className="text-center text-2xl font-semibold text-gray-700 max-w-xl mx-auto mb-5">
-              Hello CFO.<br />
-              <span className="text-lg font-normal text-gray-500">
-                How can I assist with your financial strategy today?
-              </span>
-            </div>
+         <div className="text-center text-2xl font-semibold text-[color:hsl(var(--foreground))] max-w-xl mx-auto mb-5">
+            
+           <div className="text-center text-2xl font-semibold max-w-xl mx-auto mb-5">
+             {/* Apply sidebar-background color only to "Hello CFO." */}
+             <span className="text-[hsl(var(--sidebar-background))]">Hello CFO.</span><br />
+               <span className="text-lg font-normal text-[color:hsl(var(--muted-foreground))]">
+
+                 How can I assist with your financial strategy today?
+               </span>
+             </div>
 
             {/* ChatInput is rendered directly below the message */}
             <ChatInput

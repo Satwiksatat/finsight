@@ -90,18 +90,20 @@ export function ChatInput({
             isCentered ? "min-h-[120px]" : "min-h-[80px]"
           )}
         />
-        
+
         {/* Submit button - vertically centered on right */}
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
           <Button
             type="submit"
             size="icon"
             className={cn(
-              "rounded-full bg-ring text-primary-foreground",
-              "disabled:bg-gray-200 disabled:text-gray-500",
+              "rounded-full bg-[hsl(var(--ring))] text-[hsl(var(--primary-foreground))]",
+              "hover:brightness-110",
+              "disabled:bg-muted disabled:text-muted-foreground",
               "disabled:cursor-not-allowed h-10 w-10",
-              "transition-all hover:scale-105 shadow-md"
+              "transition-all shadow-md"
             )}
+
             onClick={onSendMessage}
             disabled={isLoading || inputMessage.trim() === ''}
             aria-label="Send message"

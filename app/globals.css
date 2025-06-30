@@ -19,6 +19,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -30,74 +31,90 @@
     opacity: 1;
     transform: translateY(0);
   }
+
   to {
     opacity: 0;
     transform: translateY(-10px);
   }
 }
+
 /* -------------------------------------------------------------------------------------- */
 /* Custom global styles and Shadcn/ui variables */
 @layer base {
+
   /* CSS Variables for Light Mode (kept as is - adjust if needed for your light theme) */
-  :root {
-    --background: 0 0% 100%;       /* White */
-    --sidebar-background: 220 13% 95%; /* Slightly darker gray for sidebar */
-    --foreground: 222.2 84% 4.9%;  /* Dark Gray */
+:root {
+    --background: 30 60% 95%;
+    /* Light cream (#fdf8f2) */
+    --sidebar-background: 24 30% 18%;
+    /* Rich dark brown (#3b2d26) */
+    --foreground: 30 60% 98%; /* Changed: Very light cream/off-white for prominent text */
+    /* You can try: 0 0% 100%; (pure white) if you want even starker contrast */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --card: 30 60% 95%;
+    --card-foreground: 24 20% 20%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 24 30% 30%;
+    /* Darker brown for buttons (buttons themselves might have different text color) */
+    --primary-foreground: 30 60% 98%; /* Changed: Ensure text on primary is also very light */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary: 30 40% 90%;
+    --secondary-foreground: 24 20% 20%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 30 40% 85%;
+    --muted-foreground: 24 20% 30%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
+    --accent: 30 40% 88%;
+    /* Hover color like #e5d7c2 */
+    --accent-foreground: 24 20% 20%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 30 60% 95%;
 
-    --radius: 0.5rem;
+    --border: 30 20% 80%;
+    --input: 30 20% 80%;
+    --ring: 24 30% 30%;
   }
+
 
   /* CSS Variables for Dark Mode (ADJUSTED FOR GEMINI-LIKE AESTHETICS) */
   .dark {
     /* Main background: Deep, desaturated blue-gray. Low lightness, low saturation. */
-    --background: 210 4% 11%; /* Darker, deeper than previous attempt, but not pure black */
-    --sidebar-background: 200 3% 15%; /* Slightly lighter gray for sidebar */
-    --foreground: 210 20% 92%; /* Slightly less pure white for foreground text */
+    --background: 210 4% 11%;
+    /* Darker, deeper than previous attempt, but not pure black */
+    --sidebar-background: 200 3% 15%;
+    /* Slightly lighter gray for sidebar */
+    --foreground: 210 20% 92%;
+    /* Slightly less pure white for foreground text */
 
     /* Card/Popover backgrounds: Slightly lighter than main background, maintaining depth */
-    --card: 210 4% 11%;       /* Noticeably lighter than background, but still dark */
+    --card: 210 4% 11%;
+    /* Noticeably lighter than background, but still dark */
     --card-foreground: 210 20% 92%;
 
     --popover: 220 10% 12%;
     --popover-foreground: 210 20% 92%;
 
     /* Primary colors: Often a subtle accent color or white in dark mode */
-    --primary: 210 20% 92%; /* Keeping primary bright for visibility */
-    --primary-foreground: 220 10% 8%; /* Dark text on bright primary */
+    --primary: 210 20% 92%;
+    /* Keeping primary bright for visibility */
+    --primary-foreground: 220 10% 8%;
+    /* Dark text on bright primary */
 
     /* Secondary/Muted/Accent backgrounds: Various shades of dark gray */
-    --secondary: 220 10% 16%; /* Lighter than card, for interactive elements */
+    --secondary: 220 10% 16%;
+    /* Lighter than card, for interactive elements */
     --secondary-foreground: 210 20% 92%;
 
-    --muted: 220 10% 14%; /* For subtle backgrounds like code blocks, slightly lighter than card */
-    --muted-foreground: 215 20.2% 70%; /* Lighter muted text for better readability */
+    --muted: 220 10% 14%;
+    /* For subtle backgrounds like code blocks, slightly lighter than card */
+    --muted-foreground: 215 20.2% 70%;
+    /* Lighter muted text for better readability */
 
-    --accent: 210 10% 16%; /* Matching secondary for consistent interactive highlights */
+    --accent: 210 10% 16%;
+    /* Matching secondary for consistent interactive highlights */
     --accent-foreground: 210 20% 92%;
 
     /* Destructive colors (typically remain red/orange) */
@@ -105,9 +122,12 @@
     --destructive-foreground: 210 20% 98%;
 
     /* Borders: Subtle borders, lighter than backgrounds but darker than foreground */
-    --border: 220 10% 20%; /* A visible, but not too stark, border */
-    --input: 220 10% 20%;    /* Input borders match */
-    --ring: 0 0% 100%; /* Focus ring (can be your accent color too) */
+    --border: 220 10% 20%;
+    /* A visible, but not too stark, border */
+    --input: 220 10% 20%;
+    /* Input borders match */
+    --ring: 0 0% 100%;
+    /* Focus ring (can be your accent color too) */
   }
 
   /* -------------------------------------------------------------------------------------- */
@@ -119,9 +139,15 @@
   }
 
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-  }
+  font-family: 'Georgia', 'Times New Roman', serif;
+  /* Optional alternative: use 'Playfair Display', 'serif' via Google Fonts */
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+  h1, h2, h3, h4 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;}
 
   /* -------------------------------------------------------------------------------------- */
   /* Markdown and Code Block Styling */
@@ -149,13 +175,17 @@
 
   /* Dark mode specific adjustments for code blocks */
   .dark .prose :where(pre):not(:where([class~="not-prose"] *)) {
-    background-color: hsl(var(--muted)); /* Use muted for pre-background */
-    color: hsl(var(--muted-foreground)); /* Use muted-foreground for text */
+    background-color: hsl(var(--muted));
+    /* Use muted for pre-background */
+    color: hsl(var(--muted-foreground));
+    /* Use muted-foreground for text */
   }
 
   .dark .prose :where(code):not(:where([class~="not-prose"] *)) {
-    background-color: hsl(var(--muted)); /* Use muted for inline code background */
-    color: hsl(var(--primary-foreground)); /* Brighter text for dark mode inline code */
+    background-color: hsl(var(--muted));
+    /* Use muted for inline code background */
+    color: hsl(var(--primary-foreground));
+    /* Brighter text for dark mode inline code */
   }
 
   /* Further Prose adjustments for better typography */
@@ -164,24 +194,30 @@
     margin-top: 1.5em;
     margin-bottom: 0.5em;
   }
+
   .prose :where(p, ul, ol, blockquote):not(:where([class~="not-prose"] *)) {
     color: hsl(var(--foreground));
     line-height: 1.75;
   }
+
   .prose :where(a):not(:where([class~="not-prose"] *)) {
     color: hsl(var(--primary));
     text-decoration: underline;
     text-underline-offset: 2px;
   }
+
   .prose :where(strong):not(:where([class~="not-prose"] *)) {
     color: hsl(var(--foreground));
   }
+
   .prose :where(hr):not(:where([class~="not-prose"] *)) {
     border-color: hsl(var(--border));
   }
+
   .prose :where(li):not(:where([class~="not-prose"] *)) {
     margin-bottom: 0.5em;
   }
+
   .prose :where(table):not(:where([class~="not-prose"] *)) {
     width: 100%;
     border-collapse: collapse;
@@ -190,29 +226,35 @@
     border-radius: 0.5rem;
     overflow: hidden;
   }
+
   .prose :where(th, td):not(:where([class~="not-prose"] *)) {
     border: 1px solid hsl(var(--border));
     padding: 0.75rem;
     text-align: left;
   }
+
   .prose :where(th):not(:where([class~="not-prose"] *)) {
     background-color: hsl(var(--secondary));
     color: hsl(var(--secondary-foreground));
     font-weight: 600;
   }
+
   .prose :where(td):not(:where([class~="not-prose"] *)) {
     background-color: hsl(var(--card));
     color: hsl(var(--foreground));
   }
+
   .dark .prose :where(th):not(:where([class~="not-prose"] *)) {
     background-color: hsl(var(--secondary));
     color: hsl(var(--secondary-foreground));
   }
+
   .dark .prose :where(td):not(:where([class~="not-prose"] *)) {
     background-color: hsl(var(--card));
     color: hsl(var(--foreground));
   }
 }
+
 .sidebar-scroll {
   overflow-y: auto;
   scrollbar-gutter: stable;
@@ -230,7 +272,8 @@
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(128, 128, 128, 0.3); /* light grey, visible on scroll */
+  background-color: rgba(128, 128, 128, 0.3);
+  /* light grey, visible on scroll */
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: content-box;

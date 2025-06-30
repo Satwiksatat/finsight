@@ -1,9 +1,7 @@
-// components/chat/MessageBubble.tsx
 import React from 'react';
 import { ChatMessage } from '@/lib/types';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { ResponseMessage } from './ResponseMessage'; // Import the new component
+import { ResponseMessage } from './ResponseMessage'; // Handles markdown, image, etc.
 import { cn } from '@/lib/utils';
 
 interface MessageBubbleProps {
@@ -20,20 +18,18 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'
       )}
     >
-      {/* <Avatar className={cn('h-8 w-8', isUser ? 'bg-primary/10' : 'bg-accent/10')}>
-        <AvatarFallback>{isUser ? 'You' : 'Bot'}</AvatarFallback>
-      </Avatar> */}
-      <Card className={cn(
-        'p-3',
-        'bg-sidebar'
-      )}>
-        <CardContent className="p-0 text-sm">
+      <Card
+        className={cn(
+          'p-3 rounded-xl shadow-sm',
+          isUser
+            ? 'bg-[hsl(var(--accent))] text-[hsl(var(--foreground))]'
+            : 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))]'
+        )}
+      >
+        <CardContent className="p-0 text-sm leading-relaxed">
           {message.content.map((contentBlock, index) => (
             <ResponseMessage key={index} content={contentBlock} />
           ))}
-          {/* <div className="text-xs text-right opacity-70 mt-1">
-            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </div> */}
         </CardContent>
       </Card>
     </div>
