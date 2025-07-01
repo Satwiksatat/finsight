@@ -84,7 +84,7 @@ export function ChatInput({
           className={cn(
             "w-full resize-none pr-16 pl-8 rounded-full h-20",
             "border border-input shadow-sm py-4",
-            "text-base placeholder:text-muted-foreground/70",
+            "text-[hsl(var(--card-foreground))] placeholder:text-muted-foreground/70",
             "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             isLoading && "opacity-50 cursor-not-allowed",
             isCentered ? "min-h-[120px]" : "min-h-[80px]"

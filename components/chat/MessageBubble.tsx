@@ -14,13 +14,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   return (
     <div
       className={cn(
-        'flex items-start gap-3 max-w-[80%] break-words',
+        'flex items-start gap-3 max-w-[90%] break-words',
         isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'
       )}
     >
       <Card
         className={cn(
-          'p-3 rounded-xl shadow-sm',
+          'p-4 rounded-xl shadow-sm',
+          'min-w-[150px]',
           isUser
             ? 'bg-[hsl(var(--accent))] text-[hsl(var(--foreground))]'
             : 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))]'

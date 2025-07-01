@@ -231,7 +231,7 @@ export function Sidebar() {
       collapsed ? 'w-14 p-2' : 'w-64 p-4',
       'bg-[hsl(var(--sidebar-background))] dark:bg-[#1e1e1e]'
 
-, // light & dark mode background
+      , // light & dark mode background
     )}>
 
       {/* Header */}
@@ -250,13 +250,13 @@ export function Sidebar() {
           </div>
         )}
         <Tooltip content={collapsed ? 'Open Sidebar' : 'Close Sidebar'}>
-         <button
-              className={cn(
-                "text-[hsl(var(--foreground))] text-lg", // Use foreground color for visibility
-                collapsed ? "w-10 h-10" : "ml-auto w-10 h-10"
-              )}
-              onClick={() => setCollapsed(!collapsed)}
-            >
+          <button
+            className={cn(
+              "text-[hsl(var(--foreground))] text-lg", // Use foreground color for visibility
+              collapsed ? "w-10 h-10" : "ml-auto w-10 h-10"
+            )}
+            onClick={() => setCollapsed(!collapsed)}
+          >
             {collapsed ? (
               <PiSidebarFill className="h-6 w-6 ml-2" />
             ) : (
@@ -329,17 +329,17 @@ export function Sidebar() {
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+              <DropdownMenuContent className="bg-card z-50">
                   <DropdownMenuItem onClick={() => {
                     setEditingChatId(chat.id);
                     setEditInput(chat.title);
-                  }}>
+                  }}className="text-[#6F4E33]"> 
                     <Pencil className="w-4 h-4 mr-2" /> Rename
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleShare(chat.id)}>
+                  <DropdownMenuItem onClick={() => handleShare(chat.id)}className="text-[#6F4E33]"> 
                     <Share className="w-4 h-4 mr-2" /> Share
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleArchive(chat.id)}>
+                  <DropdownMenuItem onClick={() => handleArchive(chat.id)} className="text-[#6F4E33]"> 
                     <Archive className="w-4 h-4 mr-2" /> Archive
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDeleteClick(chat.id, chat.title)}
@@ -358,7 +358,10 @@ export function Sidebar() {
         <>
           <Separator className="my-2" />
           <div className="flex flex-col gap-2 pr-2 flex-1">
-            <h3 className="text-xs font-semibold text-[hsl(var(--foreground))] px-3 py-1">Financial Analysis</h3>
+            <h3 className="flex items-center gap-2 text-base font-medium text-[hsl(var(--foreground))] px-3 py-1">
+              <span className="h-2 w-2 rounded-full bg-current" /> {/* Circular bullet */}
+              Financial Analysis
+            </h3>
             {financialItems.map((item) => (
               <div
                 key={item.id}
@@ -379,7 +382,7 @@ export function Sidebar() {
                       <MoreVertical className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
+                  <DropdownMenuContent className="bg-card z-50">
                     <DropdownMenuItem onClick={() => handleFinancialItemAction('rename', item.id)}>
                       <Pencil className="w-4 h-4 mr-2" /> Rename
                     </DropdownMenuItem>
@@ -452,7 +455,7 @@ export function Sidebar() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete chat?</DialogTitle>
+          <DialogTitle className="text-[#6F4E33]">Delete chat?</DialogTitle> 
             <br></br>
             <DialogDescription>
               Are you sure you want to delete "
@@ -460,7 +463,7 @@ export function Sidebar() {
             </DialogDescription>
           </DialogHeader><br></br>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}className="text-[#6F4E33]">
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleActionConfirm}>
