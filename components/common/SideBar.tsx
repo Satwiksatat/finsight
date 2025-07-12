@@ -359,7 +359,6 @@ export function Sidebar() {
           <Separator className="my-2" />
           <div className="flex flex-col gap-2 pr-2 flex-1">
             <h3 className="flex items-center gap-2 text-base font-medium text-[hsl(var(--foreground))] px-3 py-1">
-              <span className="h-2 w-2 rounded-full bg-current" /> {/* Circular bullet */}
               Financial Analysis
             </h3>
             {financialItems.map((item) => (
