@@ -2,15 +2,17 @@
 'use client';
 
 import React from 'react';
-import { ChatMessage } from '@/lib/types';
+import { ChatMessage, LLMContent } from '@/lib/types';
 import { MessageBubble } from './MessageBubble';
 
 interface ChatMessagesProps {
   messages: ChatMessage[];
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  onContentClick?: (content: LLMContent) => void;
+  isClickable?: boolean;
 }
 
-export function ChatMessages({ messages, messagesEndRef }: ChatMessagesProps) {
+export function ChatMessages({ messages, messagesEndRef, onContentClick, isClickable = false }: ChatMessagesProps) {
 
   if (messages.length === 0) {
     return (
@@ -24,12 +26,19 @@ export function ChatMessages({ messages, messagesEndRef }: ChatMessagesProps) {
     <div className="flex-1 overflow-y-auto p-4">
       <div className="flex flex-col space-y-4">
         {messages.map((message) => {
-          if (!message.id) {
-            console.warn('Message missing ID:', message);
-            return null;
-          }
+                        if (!message.id) {
+              console.warn('Message missing ID:', message);
+              return null;
+            }
           
-          return <MessageBubble key={message.id} message={message} />;
+          return (
+            <MessageBubble 
+              key={message.id} 
+              message={message} 
+              onContentClick={onContentClick}
+              isClickable={isClickable}
+            />
+          );
         })}
         <div ref={messagesEndRef} />
       </div>

@@ -1,14 +1,16 @@
 import React from 'react';
-import { ChatMessage } from '@/lib/types';
+import { ChatMessage, LLMContent } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { ResponseMessage } from './ResponseMessage'; // Handles markdown, image, etc.
 import { cn } from '@/lib/utils';
 
 interface MessageBubbleProps {
   message: ChatMessage;
+  onContentClick?: (content: LLMContent) => void;
+  isClickable?: boolean;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, onContentClick, isClickable = false }: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
   return (
@@ -29,7 +31,12 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       >
         <CardContent className="p-0 text-sm leading-relaxed">
           {message.content.map((contentBlock, index) => (
-            <ResponseMessage key={index} content={contentBlock} />
+            <ResponseMessage 
+              key={index} 
+              content={contentBlock} 
+              onContentClick={onContentClick}
+              isClickable={isClickable && !isUser}
+            />
           ))}
         </CardContent>
       </Card>

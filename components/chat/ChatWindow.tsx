@@ -1,6 +1,6 @@
 // components/chat/ChatWindow.tsx
 import React from 'react';
-import { ChatMessage } from '@/lib/types';
+import { ChatMessage, LLMContent } from '@/lib/types';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { useChat } from '@/context/ChatContext';
@@ -14,7 +14,9 @@ interface ChatWindowProps {
   onSendMessage: () => void;
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  updateChatTitle: (id: string, title: string) => void; // ✅ This is the new line to add
+  updateChatTitle: (id: string, title: string) => void;
+  onContentClick?: (content: LLMContent) => void;
+  isClickable?: boolean;
 }
 
 
@@ -27,6 +29,8 @@ export function ChatWindow({
   isLoading,
   messagesEndRef,
   updateChatTitle,
+  onContentClick,
+  isClickable = false,
 }: ChatWindowProps) {
   const { conversations } = useChat(); // ✅ Add this here
 
@@ -39,7 +43,6 @@ export function ChatWindow({
   // This component focuses on display and user interaction
 
   const handleAttachFile = () => {
-    console.log('Upload Financial Document');
     // Implement file upload logic here
   };
 
@@ -106,7 +109,12 @@ export function ChatWindow({
         <>
           {/* Main content area for scrolling messages */}
           <div className="flex-1 overflow-auto p-4">
-            <ChatMessages messages={messages} messagesEndRef={messagesEndRef} />
+            <ChatMessages 
+              messages={messages} 
+              messagesEndRef={messagesEndRef} 
+              onContentClick={onContentClick}
+              isClickable={isClickable}
+            />
             {isLoading && (
               <div className="px-4 py-2 flex gap-1 items-center">
                 <span className="text-sm text-muted-foreground animate-pulse">

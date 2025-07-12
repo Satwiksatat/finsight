@@ -36,14 +36,10 @@ export async function POST(req: NextRequest) {
     const firstUserMessage = messages.find(m => m.role === 'user')?.content || 
                            "Please generate a conversation title";
 
-    console.log("First user message:", firstUserMessage);
-
     // Ensure the message content is a string
     const queryText = typeof firstUserMessage === 'string' ? firstUserMessage : 
                      (Array.isArray(firstUserMessage) ? firstUserMessage.join(' ') : 
                      String(firstUserMessage));
-
-    console.log("Query text for title generation:", queryText);
 
     // Call Dify Title Generation API
     const response = await fetch(`${DIFY_API_URL}/v1/completion-messages`, {
@@ -70,7 +66,6 @@ export async function POST(req: NextRequest) {
     }
 
     const responseData = await response.json();
-    console.log("Dify API Response:", responseData);
     
     if (!responseData.answer) {
       console.error("No answer in Dify response:", responseData);
@@ -82,7 +77,6 @@ export async function POST(req: NextRequest) {
 
     // Extract the title from the answer
     const title = responseData.answer.trim();
-    console.log("Generated title:", title);
     return NextResponse.json({ title });
 
   } catch (error) {

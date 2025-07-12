@@ -60,14 +60,14 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(requestBody),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      console.error('Dify API Error:', errorData);
-      return NextResponse.json(
-        { error: `Dify API failed: ${errorData.message || 'Unknown error'}` },
-        { status: response.status }
-      );
-    }
+          if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Dify API Error:', errorData);
+        return NextResponse.json(
+          { error: `Dify API failed: ${errorData.message || 'Unknown error'}` },
+          { status: response.status }
+        );
+      }
 
     const encoder = new TextEncoder(); // Define encoder here
     
@@ -86,7 +86,6 @@ export async function POST(req: NextRequest) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
-            console.log("Dify stream finished.");
             break;
           }
 
@@ -99,7 +98,6 @@ export async function POST(req: NextRequest) {
           for (const line of lines) {
             if (line.trim() === '') continue; // Skip empty lines
             if (line.startsWith('event: ping')) {
-              console.log('Received Dify ping event.');
               continue;
             }
             if (!line.startsWith('data: ')) {
@@ -134,18 +132,14 @@ export async function POST(req: NextRequest) {
                   })}\n\n`));
                 }
               } else if (data.event === 'conversation_created') {
-                // Log conversation creation
-                console.log('Conversation created:', data.conversation_id);
+                // Conversation created
               } else if (data.event === 'end') {
                 break;
               } else if (data.event === 'error') {
                 console.error('Dify Stream Error Event:', data.error || 'Unknown error');
-                // Don't break the stream on error, just log it
-                // controller.error(new Error(data.error || 'Unknown error'));
-                // break;
+                // Don't break the stream on error, just continue
               } else if (data.event === 'retriever_result' || data.event === 'agent_thought') {
-                // Log but don't send to frontend for now
-                console.log(`${data.event}:`, data);
+                // Skip these events for now
               }
             } catch (jsonError) {
               console.error('Failed to parse Dify stream JSON:', jsonError, 'Line:', line);

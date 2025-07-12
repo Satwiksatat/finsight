@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatWindow } from '@/components/chat/ChatWindow';
-import { ChatMessage, LLMContent, ChartContent, isTextContent } from '@/lib/types';
+import { ChatMessage, LLMContent, ChartContent, TextContent, isTextContent } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChat } from '@/context/ChatContext';
 import { MarkdownRenderer } from '@/components/common/MarkDownRenderer';
 import { ImageDisplay } from '@/components/common/ImageDisplay';
 import { ChartDisplay } from '@/components/common/ChartDisplay';
+import { ResizableSplitScreen } from '@/components/common/ResizableSplitScreen';
+import { extractChartFromText, parseLLMChartResponse, isLLMChartResponse } from '@/lib/chartParser';
 
 export default function HomePage() {
   const [isHydrated, setIsHydrated] = useState(false);
@@ -26,6 +28,7 @@ export default function HomePage() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [largeContentData, setLargeContentData] = useState<LLMContent | null>(null);
+  const [storedChartData, setStoredChartData] = useState<LLMContent | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const titleGenerationRef = useRef<Set<string>>(new Set());
   const isStreamingRef = useRef(false);
@@ -45,6 +48,7 @@ export default function HomePage() {
       setMessages([]);
     }
     setLargeContentData(null);
+    setStoredChartData(null);
     
     // Clear title generation tracking for new conversations
     if (currentChat && currentChat.isTitleGenerated) {
@@ -56,6 +60,7 @@ export default function HomePage() {
     if (!activeChatId) {
       setMessages([]);
       setLargeContentData(null);
+      setStoredChartData(null);
       // Clear title generation tracking
       titleGenerationRef.current.clear();
     }
@@ -95,6 +100,15 @@ export default function HomePage() {
       Array.isArray(content.data.labels) &&
       Array.isArray(content.data.datasets)
     );
+  };
+
+  // Check if text content contains a chart response
+  const checkForChartInText = (text: string): ChartContent | null => {
+    const chartResponse = extractChartFromText(text);
+    if (chartResponse) {
+      return parseLLMChartResponse(chartResponse);
+    }
+    return null;
   };
 
   const getMessageTextContent = (message: ChatMessage): string => {
@@ -138,6 +152,7 @@ export default function HomePage() {
     setInputMessage('');
     setIsLoading(true);
     setLargeContentData(null);
+    setStoredChartData(null);
     isStreamingRef.current = true;
 
     try {
@@ -198,10 +213,10 @@ export default function HomePage() {
             try {
               const jsonStr = line.substring(6);
               data = JSON.parse(jsonStr);
-            } catch (jsonError) {
-              console.error('Failed to parse SSE JSON:', jsonError, 'Line:', line);
-              continue;
-            }
+                    } catch (jsonError) {
+          console.error('Failed to parse SSE JSON:', jsonError, 'Line:', line);
+          continue;
+        }
           } else {
             // Handle plain text chunks
             assistantContent = assistantContent.map(block =>
@@ -221,6 +236,7 @@ export default function HomePage() {
             const llmContent = data.content;
             if (llmContent.type === 'chart') {
               setLargeContentData(llmContent);
+              setStoredChartData(llmContent);
               assistantContent = [...assistantContent, { type: 'text', content: '[Chart displayed in split screen]' }];
             } else if (llmContent.type === 'image') {
               setLargeContentData(llmContent);
@@ -233,14 +249,50 @@ export default function HomePage() {
             assistantContent = assistantContent.map(block =>
               block.type === 'text' ? { ...block, content: block.content + data.text } : block
             );
+            
+            // Check if the accumulated text contains a chart
+            const currentText = assistantContent.find(block => block.type === 'text')?.content || '';
+            const chartContent = checkForChartInText(currentText);
+            if (chartContent) {
+              setLargeContentData(chartContent);
+              setStoredChartData(chartContent);
+              // Replace the text content with a placeholder
+              assistantContent = assistantContent.map(block =>
+                block.type === 'text' ? { ...block, content: '[Chart displayed in split screen]' } : block
+              );
+            }
           } else if (data.event === 'message' && data.answer) {
             assistantContent = assistantContent.map(block =>
               block.type === 'text' ? { ...block, content: block.content + data.answer } : block
             );
+            
+            // Check if the accumulated text contains a chart
+            const currentText = assistantContent.find(block => block.type === 'text')?.content || '';
+            const chartContent = checkForChartInText(currentText);
+            if (chartContent) {
+              setLargeContentData(chartContent);
+              setStoredChartData(chartContent);
+              // Replace the text content with a placeholder
+              assistantContent = assistantContent.map(block =>
+                block.type === 'text' ? { ...block, content: '[Chart displayed in split screen]' } : block
+              );
+            }
           } else if (data.event === 'agent_message' && data.answer) {
             assistantContent = assistantContent.map(block =>
               block.type === 'text' ? { ...block, content: block.content + data.answer } : block
             );
+            
+            // Check if the accumulated text contains a chart
+            const currentText = assistantContent.find(block => block.type === 'text')?.content || '';
+            const chartContent = checkForChartInText(currentText);
+            if (chartContent) {
+              setLargeContentData(chartContent);
+              setStoredChartData(chartContent);
+              // Replace the text content with a placeholder
+              assistantContent = assistantContent.map(block =>
+                block.type === 'text' ? { ...block, content: '[Chart displayed in split screen]' } : block
+              );
+            }
           } else if (data.event === 'message_end') {
             // Don't add content for message_end, just log it
           }
@@ -305,6 +357,23 @@ export default function HomePage() {
 
   const handleCloseLargeContent = () => setLargeContentData(null);
 
+  const handleContentClick = (content: LLMContent) => {
+    if (content.type === 'chart' || content.type === 'image' || content.type === 'code') {
+      setLargeContentData(content);
+    } else if (content.type === 'text' && (content as TextContent).content === '[Chart displayed in split screen]') {
+      // Handle chart message click
+      if (storedChartData) {
+        setLargeContentData(storedChartData);
+      }
+    }
+  };
+
+  const handleChartMessageClick = () => {
+    if (storedChartData) {
+      setLargeContentData(storedChartData);
+    }
+  };
+
   if (!isHydrated) {
     return (
       <div className="flex flex-1 p-4 h-full text-muted-foreground justify-center items-center">
@@ -313,64 +382,42 @@ export default function HomePage() {
     );
   }
 
-  // Temporary debug function
-  const handleClearStorage = () => {
-    clearAllLocalStorage();
-    alert('All localStorage data cleared. Please refresh the page.');
-  };
-
   return (
-    <div className={`flex flex-1 ${largeContentData ? 'md:grid md:grid-cols-2' : 'flex'} gap-4 p-4 h-full`}>
-      {/* Temporary debug button */}
-      <div className="absolute top-4 right-4 z-50">
-        <button
-          onClick={handleClearStorage}
-          className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-          title="Clear all localStorage data"
-        >
-          Clear Storage
-        </button>
-      </div>
+    <div className="flex flex-1 p-4 h-full">
       
-      <div className={`flex-1 flex flex-col min-h-full ${largeContentData ? 'md:border-r md:pr-4' : ''}`}>
-        <ChatWindow
-          chatId={activeChatId || ''}
-          messages={messages}
-          inputMessage={inputMessage}
-          setInputMessage={setInputMessage}
-          onSendMessage={handleSendMessage}
-          isLoading={isLoading}
-          messagesEndRef={messagesEndRef}
-          updateChatTitle={updateChatTitle}
-        />
-      </div>
-
-      {largeContentData && (
-        <ScrollArea className="hidden md:block w-full md:w-1/2 p-4 border-l rounded-lg bg-card shadow-sm">
-          <div className="flex justify-end mb-2">
-            <button
-              onClick={handleCloseLargeContent}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Close"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+      <ResizableSplitScreen
+        leftPanel={
+          <ChatWindow
+            chatId={activeChatId || ''}
+            messages={messages}
+            inputMessage={inputMessage}
+            setInputMessage={setInputMessage}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            messagesEndRef={messagesEndRef}
+            updateChatTitle={updateChatTitle}
+            onContentClick={handleContentClick}
+            isClickable={true}
+          />
+        }
+        rightPanel={
           <div className="prose dark:prose-invert max-w-none">
-            {largeContentData.type === 'image' && <ImageDisplay imageData={largeContentData} />}
-            {isChartContent(largeContentData) && <ChartDisplay chartData={largeContentData} />}
-           {largeContentData.type === 'code' && (
-  <MarkdownRenderer content={`\`\`\`${largeContentData.language}\n${largeContentData.content}\n\`\`\``} />
-)}
-{largeContentData.type === 'text' && (
-  <MarkdownRenderer content={largeContentData.content} />
-)}
-
+            {largeContentData?.type === 'image' && <ImageDisplay imageData={largeContentData} />}
+            {largeContentData && isChartContent(largeContentData) && <ChartDisplay chartData={largeContentData} />}
+            {largeContentData?.type === 'code' && (
+              <MarkdownRenderer content={`\`\`\`${largeContentData.language}\n${largeContentData.content}\n\`\`\``} />
+            )}
+            {largeContentData?.type === 'text' && (
+              <MarkdownRenderer content={largeContentData.content} />
+            )}
           </div>
-        </ScrollArea>
-      )}
+        }
+        isVisible={!!largeContentData}
+        onClose={handleCloseLargeContent}
+        minWidth={300}
+        maxWidth={800}
+        defaultWidth={500}
+      />
     </div>
   );
 }
