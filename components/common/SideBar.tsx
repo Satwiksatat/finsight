@@ -272,7 +272,6 @@ export function Sidebar() {
           <Button
             onClick={() => {
               startNewChat();
-              setActiveChatId(null);
             }}
             className="w-full justify-start mb-2 bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] dark:hover:bg-muted-foreground/10 font-medium">
             <MessageCirclePlus className="w-4 h-4 text-[hsl(var(--foreground))]" />New Chat

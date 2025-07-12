@@ -1,10 +1,8 @@
 // components/chat/ChatWindow.tsx
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ChatMessage } from '@/lib/types';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
-import { cn } from '@/lib/utils';
-import { generateChatTitle } from "@/app/api/utils/ChatNaming";
 import { useChat } from '@/context/ChatContext';
 
 
@@ -37,20 +35,8 @@ export function ChatWindow({
   const currentConversation = conversations.find(c => c.id === chatId);
 
 
-  useEffect(() => {
-    // Auto-generate title after the first user message
-    if (messages.length === 1 && messages[0].role === "user") {
-      generateChatTitle(messages).then(title => {
-        updateChatTitle(chatId, title);
-      });
-    }
-    // Update title when conversation evolves
-    else if (messages.length > 1 && messages.length % 3 === 0) {
-      generateChatTitle(messages).then(title => {
-        updateChatTitle(chatId, title);
-      });
-    }
-  }, [messages, chatId, updateChatTitle]);
+  // Title generation is now handled in the main page component
+  // This component focuses on display and user interaction
 
   const handleAttachFile = () => {
     console.log('Upload Financial Document');

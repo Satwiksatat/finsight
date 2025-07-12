@@ -20,15 +20,10 @@ export function ResponseMessage({ content }: ResponseMessageProps) {
         <MarkdownRenderer content={`\`\`\`${codeBlock.language}\n${codeBlock.content}\n\`\`\``} />
       );
     case 'chart':
-      return <ChartDisplay chartData={content as ChartContent} />;
+      return null; // Chart is displayed in split screen
     case 'image':
       return <ImageDisplay imageData={content as ImageContent} />;
     default:
-      // Fallback for unknown content types
-      return (
-        <div className="text-red-500">
-          Error: Unknown content type '{(content as any).type}'
-        </div>
-      );
+      return <div className="text-muted-foreground">Unsupported content type: {content.type}</div>;
   }
 }

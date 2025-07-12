@@ -27,15 +27,10 @@ export default function ClientRootLayout({ children }: { children: React.ReactNo
             </button>
           </div>
 
-          {/* Scrollable chat area */}
-          <main className="flex-grow overflow-y-auto px-4 py-2">
-            {children /* chat messages */}
+          {/* Main content area */}
+          <main className="flex-grow">
+            {children}
           </main>
-
-          {/* Fixed bottom input */}
-          <footer className="border-t p-4">
-            {/* Your ChatInput component or JSX */}
-          </footer>
         </div>
       </div>
     </ChatProvider>

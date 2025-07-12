@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { Conversation, ChatMessage } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -17,6 +17,8 @@ interface ChatContextType {
   archiveConversation: (id: string) => void;
   isGeneratingTitle: boolean;
   generateTitleForChat: (chatId: string, messages: ChatMessage[]) => Promise<boolean>;
+  getConversation: (id: string) => Conversation | undefined;
+  clearAllLocalStorage: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const pendingActiveChatId = useRef<string | null>(null);
 
   useEffect(() => {
     if (activeChatId) {
@@ -35,25 +38,58 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [activeChatId]);
 
+  // Handle pending active chat ID updates
+  useEffect(() => {
+    if (pendingActiveChatId.current !== null) {
+      setActiveChatId(pendingActiveChatId.current);
+      pendingActiveChatId.current = null;
+    }
+  }, [conversations]);
+
   useEffect(() => {
     setIsClient(true);
     const stored = localStorage.getItem('chatConversations');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        const migrated = parsed.map((conv: any) => ({
+        
+        // Filter out any conversations with invalid data
+        const validConversations = parsed.filter((conv: any) => {
+          if (!conv.id || !conv.title) {
+            console.warn('Found invalid conversation:', conv);
+            return false;
+          }
+          return true;
+        });
+        
+        const migrated = validConversations.map((conv: any) => ({
           ...conv,
           isTitleGenerated: conv.isTitleGenerated || false,
           createdAt: new Date(conv.createdAt),
-          lastUpdated: conv.lastUpdated ? new Date(conv.lastUpdated) : new Date()
+          lastUpdated: conv.lastUpdated ? new Date(conv.lastUpdated) : new Date(),
+          messages: conv.messages || []
         }));
         setConversations(migrated);
       } catch (e) {
         console.error('Failed to parse stored conversations', e);
+        // Clear corrupted data
+        localStorage.removeItem('chatConversations');
+        setConversations([]);
       }
     }
   }, []);
 
+  // Load active chat ID after conversations are loaded
+  useEffect(() => {
+    if (isClient && activeChatId === null && conversations.length > 0) {
+      const storedActiveId = localStorage.getItem('activeChatId');
+      if (storedActiveId && conversations.find(c => c.id === storedActiveId)) {
+        setActiveChatId(storedActiveId);
+      }
+    }
+  }, [isClient, activeChatId, conversations]);
+
+  // Update localStorage when conversations change
   useEffect(() => {
     if (isClient) {
       localStorage.setItem('chatConversations', JSON.stringify(conversations));
@@ -95,20 +131,28 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
     setIsGeneratingTitle(true);
     try {
+      // Format messages for title generation API
+      const formattedMessages = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content.find(c => c.type === 'text')?.content || ''
+      }));
+
       const res = await fetch('/api/chat/generate-title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages }),
+        body: JSON.stringify({ messages: formattedMessages }),
       });
 
-      if (res.ok) {
-        const { title } = await res.json();
-        if (title) {
-          updateChatTitle(chatId, title);
-          return true;
-        }
+      const responseData = await res.json();
+
+      if (res.ok && responseData.title && !responseData.error) {
+        // Only update title if we have a valid title and no error
+        updateChatTitle(chatId, responseData.title);
+        return true;
+      } else {
+        console.error('Title generation failed:', responseData.error || 'Unknown error');
+        return false;
       }
-      return false;
     } catch (error) {
       console.error('Title generation failed:', error);
       return false;
@@ -117,15 +161,31 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isGeneratingTitle, updateChatTitle]);
 
+  const getConversation = useCallback((id: string) => {
+    return conversations.find(conv => conv.id === id);
+  }, [conversations]);
+
   const deleteConversation = useCallback((id: string) => {
     setConversations(prevConversations => {
       const filtered = prevConversations.filter(conv => conv.id !== id);
-
-      setActiveChatId(prevId => (prevId === id ? (filtered[0]?.id ?? null) : prevId));
-
+      
+      // Update active chat ID if the deleted conversation was active
+      if (activeChatId === id) {
+        const newActiveId = filtered[0]?.id ?? null;
+        pendingActiveChatId.current = newActiveId;
+      }
+      
       return filtered;
     });
-  }, []);
+  }, [activeChatId]);
+
+  // Clean up localStorage when conversations change
+  useEffect(() => {
+    if (isClient && conversations.length > 0) {
+      // This will automatically update localStorage through the existing useEffect
+      console.log('Conversations updated, localStorage will be updated automatically');
+    }
+  }, [conversations, isClient]);
 
   const archiveConversation = useCallback((id: string) => {
     updateConversation(id, { archived: true });
@@ -148,15 +208,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     return newId;
   }, [addConversation]);
 
-  useEffect(() => {
-    if (!isClient || activeChatId !== null) return;
+  const clearAllLocalStorage = useCallback(() => {
+    localStorage.clear();
+    setConversations([]);
+    setActiveChatId(null);
+    console.log('All localStorage data cleared.');
+  }, []);
 
-    const storedActiveId = localStorage.getItem('activeChatId');
-
-    if (storedActiveId && conversations.find(c => c.id === storedActiveId)) {
-      setActiveChatId(storedActiveId);
-    }
-  }, [isClient, activeChatId, conversations]);
 
   return (
     <ChatContext.Provider
@@ -173,6 +231,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         archiveConversation,
         isGeneratingTitle,
         generateTitleForChat,
+        getConversation,
+        clearAllLocalStorage,
       }}
     >
       {children}

@@ -40,13 +40,12 @@ export async function generateChatTitle(
     .join("\n");
 
   // 3. Load config
-  const DIFY_API_URL = process.env.DIFY_API_URL || "http://192.168.29.46:80";
-  const DIFY_APP_ID = process.env.DIFY_APP_ID;
-  const TITLEGEN_API_KEY = process.env.TITLEGEN_API_KEY;
+  const DIFY_API_URL = process.env.DIFY_API_URL || "http://172.16.3.123:80";
+  const DIFY_API_KEY = process.env.DIFY_API_KEY;
 
-  if (!TITLEGEN_API_KEY) {
+  if (!DIFY_API_KEY) {
     console.error(
-      "Missing DIFY_APP_ID or TITLEGEN_API_KEY in environment variables."
+      "Missing DIFY_API_KEY in environment variables."
     );
     return defaultChatTitle(messages);
   }
@@ -60,17 +59,16 @@ ${context}
 Title:`;
 
   try {
-    const res = await fetch(`${DIFY_API_URL}/v1/completion-messages`, {
+    const res = await fetch(`${DIFY_API_URL}/v1/chat-messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${TITLEGEN_API_KEY}`,
+        Authorization: `Bearer ${DIFY_API_KEY}`,
       },
       body: JSON.stringify({
-        inputs: { query: prompt },        // ← put prompt here
+        inputs: { query: prompt },
         response_mode: "blocking",
         user: "system-title-generator",
-        app_id: DIFY_APP_ID,
       }),
     });
 

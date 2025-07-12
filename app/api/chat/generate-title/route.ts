@@ -12,30 +12,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Dify API Configuration
+    const DIFY_API_URL = process.env.DIFY_API_URL || 'http://172.16.3.123:80';
+    const DIFY_APP_ID = process.env.DIFY_APP_ID;
+    const DIFY_API_KEY = process.env.DIFY_API_KEY;
+    const DIFY_TITLE_BOT_API_KEY = process.env.DIFY_TITLE_BOT_API_KEY;
+
+    if (!DIFY_API_KEY) {
+      return NextResponse.json(
+        { error: 'Dify API Key not configured in environment variables.' },
+        { status: 500 }
+      );
+    }
+
+    if (!DIFY_APP_ID) {
+      return NextResponse.json(
+        { error: 'Dify App ID not configured in environment variables.' },
+        { status: 500 }
+      );
+    }
+
     // Extract the first user message or use a default query
     const firstUserMessage = messages.find(m => m.role === 'user')?.content || 
                            "Please generate a conversation title";
 
-    // Get conversation context (last 3 messages)
-    const conversationContext = messages
-      .slice(-3)
-      .map(m => `${m.role}: ${m.content}`)
-      .join('\n');
+    console.log("First user message:", firstUserMessage);
 
-    // Call Dify API with properly formatted inputs
-    const response = await fetch(process.env.DIFY_TITLE_BOT_URL!, {
+    // Ensure the message content is a string
+    const queryText = typeof firstUserMessage === 'string' ? firstUserMessage : 
+                     (Array.isArray(firstUserMessage) ? firstUserMessage.join(' ') : 
+                     String(firstUserMessage));
+
+    console.log("Query text for title generation:", queryText);
+
+    // Call Dify Title Generation API
+    const response = await fetch(`${DIFY_API_URL}/v1/completion-messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.DIFY_TITLE_BOT_API_KEY}`,
+        'Authorization': `Bearer ${DIFY_TITLE_BOT_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: {
-          query: String(firstUserMessage), // Ensure string type
-          context: String(conversationContext) // Ensure string type
-        },
-        response_mode: 'blocking',
-        user: 'system-title-generator',
+        inputs: { query: queryText },
+        app_id: DIFY_APP_ID,
+        user: 'user_frontend_id'
       }),
     });
 
@@ -43,15 +63,26 @@ export async function POST(req: NextRequest) {
       const error = await response.text();
       console.error("Dify API Error:", {
         status: response.status,
-        url: process.env.DIFY_API_URL,
+        url: DIFY_API_URL,
         error: error
       });
       throw new Error(`Dify API error: ${error}`);
     }
 
-    const { answer } = await response.json();
-    const title = answer.trim();
+    const responseData = await response.json();
+    console.log("Dify API Response:", responseData);
+    
+    if (!responseData.answer) {
+      console.error("No answer in Dify response:", responseData);
+      return NextResponse.json(
+        { error: "No title returned from Dify API" },
+        { status: 500 }
+      );
+    }
 
+    // Extract the title from the answer
+    const title = responseData.answer.trim();
+    console.log("Generated title:", title);
     return NextResponse.json({ title });
 
   } catch (error) {

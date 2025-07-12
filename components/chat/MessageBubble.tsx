@@ -23,8 +23,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           'p-4 rounded-xl shadow-sm',
           'min-w-[150px]',
           isUser
-            ? 'bg-[hsl(var(--accent))] text-[hsl(var(--foreground))]'
-            : 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))]'
+            ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
+            : 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]'
         )}
       >
         <CardContent className="p-0 text-sm leading-relaxed">
