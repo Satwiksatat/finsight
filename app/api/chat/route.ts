@@ -5,69 +5,36 @@ export const runtime = 'edge'; // Use Edge runtime for better streaming performa
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, chatId } = await req.json();
+    const { messages } = await req.json();
 
-    // Dify API Configuration
-    const DIFY_API_URL = process.env.DIFY_API_URL || 'http://172.16.3.123:80';
-    const DIFY_APP_ID = process.env.DIFY_APP_ID;
-    const DIFY_API_KEY = process.env.DIFY_API_KEY;
+    // New backend (FastAPI) configuration
+    const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://127.0.0.1:8000';
 
-    if (!DIFY_API_KEY) {
-      return NextResponse.json(
-        { error: 'Dify API Key not configured in environment variables.' },
-        { status: 500 }
-      );
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json({ error: 'No messages provided.' }, { status: 400 });
     }
 
-    if (!DIFY_APP_ID) {
-      return NextResponse.json(
-        { error: 'Dify App ID not configured in environment variables.' },
-        { status: 500 }
-      );
-    }
-
-    // Extract the latest user query for the Dify 'inputs' field.
-    const latestUserQuery = messages[messages.length - 1]?.content;
-
-    if (!latestUserQuery) {
-      return NextResponse.json({ error: 'No user query found in messages.' }, { status: 400 });
-    }
-
-    // Prepare conversation history for Dify
-    const conversationHistory = messages.slice(0, -1).map((msg: any) => ({
-      role: msg.role,
-      content: msg.content
-    }));
-
-    // Prepare the request body
-    const requestBody: any = {
-      inputs: {}, // Additional input variables if your Dify app requires them
-      query: latestUserQuery,
-      response_mode: 'streaming',
-      user: 'user_frontend_id', // Use a consistent user ID
-      app_id: DIFY_APP_ID, // Include the app ID
+    // Forward messages to the new backend streaming endpoint
+    const requestBody = {
+      messages,
     };
 
-    // Don't include conversation_id for new conversations
-    // Dify will create a new conversation automatically
-
-    const response = await fetch(`${DIFY_API_URL}/v1/chat-messages`, {
+    const response = await fetch(`${BACKEND_API_URL}/chat/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DIFY_API_KEY}`,
       },
       body: JSON.stringify(requestBody),
     });
 
-          if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        console.error('Dify API Error:', errorData);
-        return NextResponse.json(
-          { error: `Dify API failed: ${errorData.message || 'Unknown error'}` },
-          { status: response.status }
-        );
-      }
+    if (!response.ok) {
+      const errorData = await response.text().catch(() => 'Unknown error');
+      console.error('Backend API Error:', errorData);
+      return NextResponse.json(
+        { error: `Backend API failed: ${errorData || 'Unknown error'}` },
+        { status: response.status }
+      );
+    }
 
     const encoder = new TextEncoder(); // Define encoder here
     
@@ -86,6 +53,8 @@ export async function POST(req: NextRequest) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
+            // Signal end of message when stream ends
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'message_end' })}\n\n`));
             break;
           }
 
@@ -97,52 +66,31 @@ export async function POST(req: NextRequest) {
 
           for (const line of lines) {
             if (line.trim() === '') continue; // Skip empty lines
-            if (line.startsWith('event: ping')) {
+            if (line.startsWith('event: ping')) continue;
+            if (line.startsWith('event: end')) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'message_end' })}\n\n`));
               continue;
             }
-            if (!line.startsWith('data: ')) {
-              console.warn('Unexpected line in Dify stream:', line);
-              continue;
-            }
+            if (!line.startsWith('data: ')) continue; // Ignore other SSE fields
 
             try {
               const jsonStr = line.substring(6); // Remove 'data: ' prefix
               const data = JSON.parse(jsonStr);
-
-              // Handle different Dify stream event types
-              if (data.event === 'message' && data.answer) {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'message', answer: data.answer })}\n\n`));
-              } else if (data.event === 'agent_message' && data.answer) {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'agent_message', answer: data.answer })}\n\n`));
-              } else if (data.event === 'text_chunk' && data.text) {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'text_chunk', text: data.text })}\n\n`));
-              } else if (data.event === 'message_end') {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'message_end' })}\n\n`));
-              } else if (data.event === 'message' && data.message) {
-                // Handle structured content
-                if (typeof data.message === 'string') {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'text_chunk', text: data.message })}\n\n`));
-                } else if (data.message.answer) {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'text_chunk', text: data.message.answer })}\n\n`));
-                } else if (data.message.llm_content) {
-                  // Handle structured LLM content (charts, images, etc.)
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                    type: 'structured_content',
-                    content: data.message.llm_content
-                  })}\n\n`));
+              
+              // Handle structured content (charts, etc.)
+              if (data.event === 'structured_content' || data.type === 'structured_content') {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+              }
+              // Map OpenAI-style SSE delta chunks to the frontend's expected format
+              // Expected from backend: { choices: [{ delta: { content: string } }] }
+              else if (Array.isArray(data?.choices)) {
+                const text = data.choices.map((c: { delta?: { content?: string } }) => c?.delta?.content || '').join('');
+                if (text) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'text_chunk', text })}\n\n`));
                 }
-              } else if (data.event === 'conversation_created') {
-                // Conversation created
-              } else if (data.event === 'end') {
-                break;
-              } else if (data.event === 'error') {
-                console.error('Dify Stream Error Event:', data.error || 'Unknown error');
-                // Don't break the stream on error, just continue
-              } else if (data.event === 'retriever_result' || data.event === 'agent_thought') {
-                // Skip these events for now
               }
             } catch (jsonError) {
-              console.error('Failed to parse Dify stream JSON:', jsonError, 'Line:', line);
+              console.error('Failed to parse backend stream JSON:', jsonError, 'Line:', line);
             }
           }
         }

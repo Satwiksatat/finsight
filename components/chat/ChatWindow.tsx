@@ -47,9 +47,9 @@ export function ChatWindow({
   };
 
   return (
-    <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden">
+    <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden card-sport">
       {/* This top header bar remains unchanged */}
-      <div className="flex items-center justify-between h-14 border-b border-border px-4">
+      <div className="flex items-center justify-between h-14 border-b-2 border-primary/20 px-4 bg-gradient-to-r from-primary/5 to-secondary/5">
         {currentConversation && (
           <h2 className="text-sm font-medium truncate max-w-[80%]">
             {currentConversation.title === 'New Chat' ? (
@@ -80,16 +80,13 @@ export function ChatWindow({
         // LAYOUT 1: WHEN CHAT IS EMPTY - Center everything as one block
         // ===================================================================
         <div className="flex-1 flex flex-col justify-center items-center p-4">
-         <div className="text-center text-2xl font-semibold text-[color:hsl(var(--foreground))] max-w-xl mx-auto mb-5">
-            
-           <div className="text-center text-2xl font-semibold max-w-xl mx-auto mb-5">
-             {/* Apply sidebar-background color only to "Hello CFO." */}
-             <span className="text-[hsl(var(--sidebar-background))]">Hello CFO.</span><br />
-               <span className="text-lg font-normal text-[color:hsl(var(--muted-foreground))]">
-
-                 How can I assist with your financial strategy today?
-               </span>
-             </div>
+         <div className="text-center max-w-xl mx-auto mb-8">
+           <h1 className="text-5xl font-bold mb-2 text-gradient">HELLO CFO</h1>
+           <div className="energy-bar mb-4"></div>
+           <p className="text-lg text-muted-foreground">
+             How can I assist with your financial strategy today?
+           </p>
+         </div>
 
             {/* ChatInput is rendered directly below the message */}
             <ChatInput
@@ -100,7 +97,6 @@ export function ChatWindow({
               isLoading={isLoading}
               onAttachFile={handleAttachFile}
             />
-          </div>
         </div>
       ) : (
         // ===================================================================
@@ -108,7 +104,7 @@ export function ChatWindow({
         // ===================================================================
         <>
           {/* Main content area for scrolling messages */}
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto p-4" style={{maxHeight: 'calc(100vh - 200px)', overflowY: 'auto'}}>
             <ChatMessages 
               messages={messages} 
               messagesEndRef={messagesEndRef} 
@@ -128,7 +124,7 @@ export function ChatWindow({
           </div>
 
           {/* Input area fixed at the bottom */}
-          <div className="p-4 bg-card border-t border-border">
+          <div className="p-4 bg-gradient-to-t from-primary/5 to-transparent border-t-2 border-primary/20">
             <ChatInput
               isCentered={false} // Use the standard, non-centered input
               inputMessage={inputMessage}

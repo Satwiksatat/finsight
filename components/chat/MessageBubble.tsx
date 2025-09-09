@@ -22,11 +22,11 @@ export function MessageBubble({ message, onContentClick, isClickable = false }: 
     >
       <Card
         className={cn(
-          'p-4 rounded-xl shadow-sm',
+          'p-4 shadow-sm transition-all duration-300',
           'min-w-[150px]',
           isUser
-            ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]'
-            : 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]'
+            ? 'message-user'
+            : 'message-assistant'
         )}
       >
         <CardContent className="p-0 text-sm leading-relaxed">

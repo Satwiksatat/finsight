@@ -3,8 +3,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { inter } from "@/lib/fonts"; // ✅ updated import
-import ClientRootLayout from "./ClientRootLayout"; // ✅ still using client layout
+import { inter } from "@/lib/fonts"; 
+import ClientRootLayout from "./ClientRootLayout"; 
 
 export const metadata: Metadata = {
   title: "Agentic Chatbot UI",
@@ -21,7 +21,7 @@ export default function RootLayout({
       <body
         className={cn(
     "min-h-screen bg-background text-foreground font-sans antialiased flex flex-col",
-    inter.variable // ✅ still works
+    inter.variable 
         )}
       >
         <ClientRootLayout>{children}</ClientRootLayout>

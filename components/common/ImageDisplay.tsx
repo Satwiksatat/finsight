@@ -8,7 +8,7 @@ interface ImageDisplayProps {
 }
 
 export function ImageDisplay({ imageData }: ImageDisplayProps) {
-  if (!imageData || !imageData.url) {
+  if (!imageData || !imageData.url || imageData.url.trim() === '') {
     return <div className="text-red-500">Invalid image data provided.</div>;
   }
 

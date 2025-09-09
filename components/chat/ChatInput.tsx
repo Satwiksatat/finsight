@@ -83,9 +83,8 @@ export function ChatInput({
           disabled={isLoading}
           className={cn(
             "w-full resize-none pr-16 pl-8 rounded-full h-20",
-            "border border-input shadow-sm py-4",
+            "input-sport py-4",
             "text-[hsl(var(--card-foreground))] placeholder:text-muted-foreground/70",
-            "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             isLoading && "opacity-50 cursor-not-allowed",
             isCentered ? "min-h-[120px]" : "min-h-[80px]"
           )}
@@ -97,11 +96,10 @@ export function ChatInput({
             type="submit"
             size="icon"
             className={cn(
-              "rounded-full bg-[hsl(var(--ring))] text-[hsl(var(--primary-foreground))]",
-              "hover:brightness-110",
+              "rounded-full btn-sport text-white",
               "disabled:bg-muted disabled:text-muted-foreground",
               "disabled:cursor-not-allowed h-10 w-10",
-              "transition-all shadow-md"
+              "transition-all"
             )}
 
             onClick={onSendMessage}

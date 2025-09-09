@@ -22,7 +22,7 @@ export interface LLMChartResponse {
     series: Array<{
       name: string;
       type: string;
-      data: number[];
+      data: number[] | Array<{name: string; value: number}>;
       [key: string]: any;
     }>;
   };
@@ -32,26 +32,54 @@ export interface LLMChartResponse {
 export function parseLLMChartResponse(response: LLMChartResponse): ChartContent {
   const { chart_json, explain } = response;
   
-  // Convert ECharts format to Chart.js format
-  const labels = chart_json.xAxis?.data || [];
-  const datasets = chart_json.series.map((series, index) => ({
-    label: series.name,
-    data: series.data,
-    backgroundColor: getChartColor(index, series.type),
-    borderColor: getChartColor(index, series.type),
-    borderWidth: 2,
-    fill: series.type === 'line' ? false : undefined,
-    tension: series.type === 'line' ? 0.4 : undefined,
-  }));
+  const firstSeries = chart_json.series[0];
+  const chartType = mapEChartsTypeToChartJS(firstSeries?.type || 'bar');
+  
+  let labels: string[] = [];
+  let datasets: any[] = [];
+  
+  // Handle pie/doughnut charts differently
+  if (chartType === 'pie' || chartType === 'doughnut') {
+    // For pie charts, data is in format [{name: "Revenue", value: 45.2}, ...]
+    if (firstSeries && Array.isArray(firstSeries.data)) {
+      labels = firstSeries.data.map((item: any) => item.name || item);
+      const values = firstSeries.data.map((item: any) => item.value || item);
+      
+      datasets = [{
+        label: firstSeries.name || 'Data',
+        data: values,
+        backgroundColor: [
+          '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+          '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+        ],
+        borderColor: [
+          '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+          '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+        ],
+        borderWidth: 2,
+      }];
+    }
+  } else {
+    // Handle bar/line charts
+    labels = chart_json.xAxis?.data || [];
+    datasets = chart_json.series.map((series, index) => ({
+      label: series.name,
+      data: series.data,
+      backgroundColor: getChartColor(index, series.type),
+      borderColor: getChartColor(index, series.type),
+      borderWidth: 2,
+      fill: series.type === 'line' ? false : undefined,
+      tension: series.type === 'line' ? 0.4 : undefined,
+    }));
+  }
 
   const chartData: ChartData = {
     labels,
     datasets,
   };
 
-  const chartType = mapEChartsTypeToChartJS(chart_json.series[0]?.type || 'bar');
-
-  const options = {
+  // Create options based on chart type
+  const options: any = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -64,16 +92,20 @@ export function parseLLMChartResponse(response: LLMChartResponse): ChartContent 
         },
       },
       legend: {
-        display: !!chart_json.legend?.data,
-        position: 'top' as const,
+        display: true,
+        position: (chartType === 'pie' || chartType === 'doughnut') ? 'right' as const : 'top' as const,
       },
       tooltip: {
         enabled: true,
-        mode: 'index' as const,
+        mode: (chartType === 'pie' || chartType === 'doughnut') ? 'point' as const : 'index' as const,
         intersect: false,
       },
     },
-    scales: {
+  };
+  
+  // Add scales only for non-pie charts
+  if (chartType !== 'pie' && chartType !== 'doughnut') {
+    options.scales = {
       x: {
         display: true,
         title: {
@@ -87,8 +119,8 @@ export function parseLLMChartResponse(response: LLMChartResponse): ChartContent 
         },
         beginAtZero: true,
       },
-    },
-  };
+    };
+  }
 
   return {
     type: 'chart',
@@ -148,6 +180,16 @@ export function isLLMChartResponse(obj: any): obj is LLMChartResponse {
 }
 
 export function extractChartFromText(text: string): LLMChartResponse | null {
+  // Don't try to parse text that doesn't look like JSON
+  if (!text || typeof text !== 'string') {
+    return null;
+  }
+  
+  // Only attempt parsing if the text contains chart-like JSON structure
+  if (!text.includes('viz_choice') && !text.includes('chart_json')) {
+    return null;
+  }
+  
   try {
     // Try to find JSON in the text
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -158,13 +200,19 @@ export function extractChartFromText(text: string): LLMChartResponse | null {
       }
     }
     
-    // If no match found, try parsing the entire text
-    const parsed = JSON.parse(text);
-    if (isLLMChartResponse(parsed)) {
-      return parsed;
+    // If no match found, try parsing the entire text (only if it starts with {)
+    if (text.trim().startsWith('{')) {
+      const parsed = JSON.parse(text);
+      if (isLLMChartResponse(parsed)) {
+        return parsed;
+      }
     }
   } catch (error) {
-    console.warn('Failed to extract chart from text:', error);
+    // Silently fail for non-JSON text - this is expected behavior
+    // Only log if it looks like it should be JSON
+    if (text.trim().startsWith('{') || text.includes('viz_choice')) {
+      console.warn('Failed to extract chart from text:', error);
+    }
   }
   
   return null;

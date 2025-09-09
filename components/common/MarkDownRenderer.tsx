@@ -52,12 +52,18 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
               {children}
             </a>
           ),
-          img: ({ src, alt }) => (
-            // Use Next.js Image component for optimization if you are rendering images from Markdown
-            // Note: This example uses regular <img> for simplicity with ReactMarkdown.
-            // For proper Next/Image, you might need a custom image component and configure next.config.js for domains.
-            <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-4" />
-          )
+          img: ({ src, alt }) => {
+            // Don't render if src is empty or undefined
+            if (!src || src.trim() === '') {
+              return null;
+            }
+            return (
+              // Use Next.js Image component for optimization if you are rendering images from Markdown
+              // Note: This example uses regular <img> for simplicity with ReactMarkdown.
+              // For proper Next/Image, you might need a custom image component and configure next.config.js for domains.
+              <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-4" />
+            );
+          }
         }}
       >
         {content}

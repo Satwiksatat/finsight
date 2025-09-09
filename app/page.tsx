@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatWindow } from '@/components/chat/ChatWindow';
-import { ChatMessage, LLMContent, ChartContent, TextContent, isTextContent } from '@/lib/types';
+import { ChatMessage, LLMContent, ChartContent, TextContent, isTextContent, isChartContent } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChat } from '@/context/ChatContext';
@@ -91,16 +91,7 @@ export default function HomePage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isChartContent = (content: any): content is ChartContent => {
-    return (
-      content?.type === 'chart' &&
-      typeof content.chartType === 'string' &&
-      content.data &&
-      Array.isArray(content.data.labels) &&
-      Array.isArray(content.data.datasets)
-    );
-  };
+  // Use the isChartContent from types.ts - removed local duplicate
 
   // Check if text content contains a chart response
   const checkForChartInText = (text: string): ChartContent | null => {
@@ -183,6 +174,7 @@ export default function HomePage() {
       const decoder = new TextDecoder();
       const assistantId = uuidv4();
       let assistantContent: LLMContent[] = [{ type: 'text', content: '' }];
+      let hasStructuredChart = false; // Track if we've received structured chart content
 
       const assistantMessage: ChatMessage = {
         id: assistantId,
@@ -231,12 +223,21 @@ export default function HomePage() {
             continue;
           }
 
+          console.log('Processing SSE data:', data);
+          
           // Handle structured data
           if (data.type === 'structured_content') {
+            console.log('Found structured content!');
             const llmContent = data.content;
-            if (llmContent.type === 'chart') {
-              setLargeContentData(llmContent);
-              setStoredChartData(llmContent);
+            if (llmContent.type === 'chart' || llmContent.viz_choice === 'chart') {
+              // Parse the chart data using the chartParser
+              console.log('Raw chart data from backend:', llmContent);
+              const chartContent = parseLLMChartResponse(llmContent);
+              console.log('Parsed chart content:', chartContent);
+              console.log('Setting largeContentData...');
+              setLargeContentData(chartContent);
+              setStoredChartData(chartContent);
+              hasStructuredChart = true; // Mark that we have structured chart content
               assistantContent = [...assistantContent, { type: 'text', content: '[Chart displayed in split screen]' }];
             } else if (llmContent.type === 'image') {
               setLargeContentData(llmContent);
@@ -250,48 +251,54 @@ export default function HomePage() {
               block.type === 'text' ? { ...block, content: block.content + data.text } : block
             );
             
-            // Check if the accumulated text contains a chart
-            const currentText = assistantContent.find(block => block.type === 'text')?.content || '';
-            const chartContent = checkForChartInText(currentText);
-            if (chartContent) {
-              setLargeContentData(chartContent);
-              setStoredChartData(chartContent);
-              // Replace the text content with a placeholder
-              assistantContent = assistantContent.map(block =>
-                block.type === 'text' ? { ...block, content: '[Chart displayed in split screen]' } : block
-              );
+            // Only check for charts in text if we haven't received structured chart content
+            if (!hasStructuredChart) {
+              const currentText = assistantContent.find(block => block.type === 'text')?.content || '';
+              const chartContent = checkForChartInText(currentText);
+              if (chartContent) {
+                setLargeContentData(chartContent);
+                setStoredChartData(chartContent);
+                // Replace the text content with a placeholder
+                assistantContent = assistantContent.map(block =>
+                  block.type === 'text' ? { ...block, content: '[Chart displayed in split screen]' } : block
+                );
+              }
             }
           } else if (data.event === 'message' && data.answer) {
             assistantContent = assistantContent.map(block =>
               block.type === 'text' ? { ...block, content: block.content + data.answer } : block
             );
             
-            // Check if the accumulated text contains a chart
-            const currentText = assistantContent.find(block => block.type === 'text')?.content || '';
-            const chartContent = checkForChartInText(currentText);
-            if (chartContent) {
-              setLargeContentData(chartContent);
-              setStoredChartData(chartContent);
-              // Replace the text content with a placeholder
-              assistantContent = assistantContent.map(block =>
-                block.type === 'text' ? { ...block, content: '[Chart displayed in split screen]' } : block
-              );
+            // Only check for charts in text if we haven't received structured chart content
+            if (!hasStructuredChart) {
+              const currentText = assistantContent.find(block => block.type === 'text')?.content || '';
+              const chartContent = checkForChartInText(currentText);
+              if (chartContent) {
+                setLargeContentData(chartContent);
+                setStoredChartData(chartContent);
+                // Replace the text content with a placeholder
+                assistantContent = assistantContent.map(block =>
+                  block.type === 'text' ? { ...block, content: '[Chart displayed in split screen]' } : block
+                );
+              }
             }
           } else if (data.event === 'agent_message' && data.answer) {
             assistantContent = assistantContent.map(block =>
               block.type === 'text' ? { ...block, content: block.content + data.answer } : block
             );
             
-            // Check if the accumulated text contains a chart
-            const currentText = assistantContent.find(block => block.type === 'text')?.content || '';
-            const chartContent = checkForChartInText(currentText);
-            if (chartContent) {
-              setLargeContentData(chartContent);
-              setStoredChartData(chartContent);
-              // Replace the text content with a placeholder
-              assistantContent = assistantContent.map(block =>
-                block.type === 'text' ? { ...block, content: '[Chart displayed in split screen]' } : block
-              );
+            // Only check for charts in text if we haven't received structured chart content
+            if (!hasStructuredChart) {
+              const currentText = assistantContent.find(block => block.type === 'text')?.content || '';
+              const chartContent = checkForChartInText(currentText);
+              if (chartContent) {
+                setLargeContentData(chartContent);
+                setStoredChartData(chartContent);
+                // Replace the text content with a placeholder
+                assistantContent = assistantContent.map(block =>
+                  block.type === 'text' ? { ...block, content: '[Chart displayed in split screen]' } : block
+                );
+              }
             }
           } else if (data.event === 'message_end') {
             // Don't add content for message_end, just log it
@@ -402,13 +409,27 @@ export default function HomePage() {
         }
         rightPanel={
           <div className="prose dark:prose-invert max-w-none">
+            {console.log('Right panel rendering. largeContentData:', largeContentData)}
             {largeContentData?.type === 'image' && <ImageDisplay imageData={largeContentData} />}
-            {largeContentData && isChartContent(largeContentData) && <ChartDisplay chartData={largeContentData} />}
+            {largeContentData && isChartContent(largeContentData) && (
+              <>
+                {console.log('Rendering ChartDisplay component')}
+                <ChartDisplay chartData={largeContentData} />
+              </>
+            )}
+            {largeContentData?.type === 'chart' && !isChartContent(largeContentData) && (
+              <div className="text-red-500 p-4">
+                Chart data validation failed. Data: {JSON.stringify(largeContentData, null, 2)}
+              </div>
+            )}
             {largeContentData?.type === 'code' && (
               <MarkdownRenderer content={`\`\`\`${largeContentData.language}\n${largeContentData.content}\n\`\`\``} />
             )}
             {largeContentData?.type === 'text' && (
               <MarkdownRenderer content={largeContentData.content} />
+            )}
+            {!largeContentData && (
+              <div className="text-muted-foreground p-4">No content to display</div>
             )}
           </div>
         }

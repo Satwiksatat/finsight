@@ -35,7 +35,17 @@ interface ChartDisplayProps {
 }
 
 export function ChartDisplay({ chartData }: ChartDisplayProps) {
+  console.log('ChartDisplay received:', chartData);
+  console.log('Chart data validation:', {
+    hasChartData: !!chartData,
+    hasData: !!chartData?.data,
+    chartType: chartData?.chartType,
+    dataLabels: chartData?.data?.labels,
+    dataDatasets: chartData?.data?.datasets
+  });
+  
   if (!chartData || !chartData.data) {
+    console.log('ChartDisplay: Invalid chart data, returning error');
     return <div className="text-red-500">Invalid chart data provided.</div>;
   }
 

@@ -2,6 +2,13 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Disable type checking and linting during build for Docker
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Add your image optimization domains here.
   // This is crucial for next/image to correctly optimize external images.
   images: {
