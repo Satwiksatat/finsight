@@ -104,44 +104,48 @@ export function ResizableSplitScreen({
     <div ref={containerRef} className={`flex flex-1 min-h-full ${isResizing ? 'select-none' : ''}`}>
       <div className="flex-1 flex flex-col min-h-full">{leftPanel}</div>
       
-      {/* Resize handle - made wider and more visible */}
+      {/* Athletic resize handle */}
       <div
         ref={resizeRef}
-        className={`w-4 bg-border hover:bg-primary/50 cursor-col-resize transition-colors relative z-10 ${
-          isResizing ? 'bg-primary' : ''
+        className={`w-6 bg-gradient-to-b from-primary/20 via-accent/20 to-primary/20 hover:from-primary/40 hover:via-accent/40 hover:to-primary/40 cursor-col-resize transition-all duration-300 relative z-10 ${
+          isResizing ? 'from-primary/60 via-accent/60 to-primary/60' : ''
         }`}
         onMouseDown={handleResizeStart}
-        style={{ cursor: isResizing ? 'col-resize' : 'col-resize' }}
+        style={{ cursor: 'col-resize' }}
       >
         <div className="absolute inset-y-0 -left-2 -right-2" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-12 bg-muted-foreground/50 rounded-full" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col gap-1">
+          <div className="w-1 h-3 bg-white/80 rounded-full" />
+          <div className="w-1 h-3 bg-white/80 rounded-full" />
+          <div className="w-1 h-3 bg-white/80 rounded-full" />
+        </div>
       </div>
 
-      {/* Right panel */}
+      {/* Right panel with Agilitas styling */}
       <div
-        className="bg-card shadow-sm border-l border-border flex flex-col"
+        className="bg-gradient-to-b from-card to-background shadow-2xl border-l-4 border-primary/30 flex flex-col"
         style={{ width: `${width}px` }}
       >
-        {/* Panel header */}
-        <div className="flex items-center justify-between p-3 border-b border-border bg-card pr-20">
-          <h3 className="text-sm font-medium text-foreground">Chart View</h3>
+        {/* Athletic panel header */}
+        <div className="flex items-center justify-between p-4 border-b-4 border-primary/30 bg-gradient-to-r from-secondary/90 to-secondary/70 pr-20">
+          <h3 className="text-base font-bold uppercase tracking-wider text-white">Performance View</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={toggleMinimize}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50"
+              className="text-white/70 hover:text-white transition-all duration-300 p-2 rounded hover:bg-white/10 hover:scale-110 active:scale-95"
               title="Minimize panel"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-4 w-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-5 w-5">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
               </svg>
             </button>
             <button
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50"
+              className="text-white/70 hover:text-white transition-all duration-300 p-2 rounded hover:bg-white/10 hover:scale-110 active:scale-95"
               title="Close panel"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-4 w-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L6 6M6 6l12 12" />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-5 w-5">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>

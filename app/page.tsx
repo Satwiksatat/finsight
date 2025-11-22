@@ -11,6 +11,7 @@ import { ImageDisplay } from '@/components/common/ImageDisplay';
 import { ChartDisplay } from '@/components/common/ChartDisplay';
 import { ResizableSplitScreen } from '@/components/common/ResizableSplitScreen';
 import { extractChartFromText, parseLLMChartResponse, isLLMChartResponse } from '@/lib/chartParser';
+import { DEFAULT_USER_ID } from '@/lib/constants';
 
 export default function HomePage() {
   const [isHydrated, setIsHydrated] = useState(false);
@@ -155,7 +156,8 @@ export default function HomePage() {
             role: msg.role,
             content: msg.content.find(c => c.type === 'text')?.content || ''
           })),
-          chatId: chatId
+          chatId: chatId,
+          user_id: DEFAULT_USER_ID
         }),
       });
 
@@ -182,6 +184,7 @@ export default function HomePage() {
         content: assistantContent,
         timestamp: new Date(),
         isStreaming: true,
+        metadata: {},
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -226,25 +229,42 @@ export default function HomePage() {
           console.log('Processing SSE data:', data);
           
           // Handle structured data
-          if (data.type === 'structured_content') {
-            console.log('Found structured content!');
-            const llmContent = data.content;
-            if (llmContent.type === 'chart' || llmContent.viz_choice === 'chart') {
-              // Parse the chart data using the chartParser
-              console.log('Raw chart data from backend:', llmContent);
-              const chartContent = parseLLMChartResponse(llmContent);
-              console.log('Parsed chart content:', chartContent);
-              console.log('Setting largeContentData...');
-              setLargeContentData(chartContent);
-              setStoredChartData(chartContent);
-              hasStructuredChart = true; // Mark that we have structured chart content
-              assistantContent = [...assistantContent, { type: 'text', content: '[Chart displayed in split screen]' }];
-            } else if (llmContent.type === 'image') {
-              setLargeContentData(llmContent);
-              assistantContent = [...assistantContent, { type: 'text', content: '[Image displayed in split screen]' }];
-            } else if (llmContent.type === 'code') {
-              setLargeContentData(llmContent);
-              assistantContent = [...assistantContent, { type: 'text', content: '[Code displayed in split screen]' }];
+          if (data.event === 'structured_content') {
+            if (data.type === 'structured_content') {
+              console.log('Found structured content!');
+              const llmContent = data.content;
+              if (llmContent.type === 'chart' || llmContent.viz_choice === 'chart') {
+                // Parse the chart data using the chartParser
+                console.log('Raw chart data from backend:', llmContent);
+                const chartContent = parseLLMChartResponse(llmContent);
+                console.log('Parsed chart content:', chartContent);
+                console.log('Setting largeContentData...');
+                setLargeContentData(chartContent);
+                setStoredChartData(chartContent);
+                hasStructuredChart = true; // Mark that we have structured chart content
+                assistantContent = [...assistantContent, { type: 'text', content: '[Chart displayed in split screen]' }];
+              } else if (llmContent.type === 'image') {
+                setLargeContentData(llmContent);
+                assistantContent = [...assistantContent, { type: 'text', content: '[Image displayed in split screen]' }];
+              } else if (llmContent.type === 'code') {
+                setLargeContentData(llmContent);
+                assistantContent = [...assistantContent, { type: 'text', content: '[Code displayed in split screen]' }];
+              }
+            } else if (data.type === 'citations') {
+              const citations = Array.isArray(data.content) ? data.content : [];
+              if (citations.length) {
+                const formatted = citations
+                  .map((item: any, idx: number) => {
+                    const title = item.title || item.url || `Source ${idx + 1}`;
+                    const source = item.source ? ` (${item.source})` : '';
+                    return `${idx + 1}. ${title}${source}${item.url ? ` — ${item.url}` : ''}`;
+                  })
+                  .join('\n');
+                assistantContent = [
+                  ...assistantContent,
+                  { type: 'text', content: `Sources:\n${formatted}` },
+                ];
+              }
             }
           } else if (data.event === 'text_chunk' && data.text) {
             assistantContent = assistantContent.map(block =>
@@ -300,6 +320,13 @@ export default function HomePage() {
                 );
               }
             }
+          } else if (data.event === 'telemetry' && data.telemetry) {
+            const skill = data.telemetry.selected_agent || data.telemetry.skill;
+            setMessages(prev => prev.map(m => (
+              m.id === assistantId
+                ? { ...m, metadata: { ...(m.metadata || {}), telemetry: data.telemetry, skill } }
+                : m
+            )));
           } else if (data.event === 'message_end') {
             // Don't add content for message_end, just log it
           }
@@ -383,8 +410,14 @@ export default function HomePage() {
 
   if (!isHydrated) {
     return (
-      <div className="flex flex-1 p-4 h-full text-muted-foreground justify-center items-center">
-        Loading...
+      <div className="flex flex-1 p-4 h-full justify-center items-center bg-background">
+        <div className="text-center">
+          <div className="agilitas-loader w-16 h-16 mx-auto mb-4" />
+          <h2 className="text-xl font-bold uppercase tracking-wider text-primary animate-pulse">
+            Initializing Performance System
+          </h2>
+          <div className="performance-meter w-48 h-2 mx-auto mt-4" />
+        </div>
       </div>
     );
   }
@@ -409,7 +442,6 @@ export default function HomePage() {
         }
         rightPanel={
           <div className="prose dark:prose-invert max-w-none">
-            {console.log('Right panel rendering. largeContentData:', largeContentData)}
             {largeContentData?.type === 'image' && <ImageDisplay imageData={largeContentData} />}
             {largeContentData && isChartContent(largeContentData) && (
               <>

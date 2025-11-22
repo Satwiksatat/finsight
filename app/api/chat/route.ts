@@ -5,7 +5,7 @@ export const runtime = 'edge'; // Use Edge runtime for better streaming performa
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json();
+    const { messages, chatId, user_id } = await req.json();
 
     // New backend (FastAPI) configuration
     const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://127.0.0.1:8000';
@@ -17,9 +17,12 @@ export async function POST(req: NextRequest) {
     // Forward messages to the new backend streaming endpoint
     const requestBody = {
       messages,
+      chatId,
+      user_id,
+      persist: true,
     };
 
-    const response = await fetch(`${BACKEND_API_URL}/chat/stream`, {
+    const response = await fetch(`${BACKEND_API_URL}/api/custom-chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,63 +39,62 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const encoder = new TextEncoder(); // Define encoder here
+    // Get JSON response from agent system
+    const agentResponse = await response.json();
+    const encoder = new TextEncoder();
     
-    // Stream Dify's response directly to the frontend
+    // Convert agent response to SSE format for frontend compatibility
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        if (!reader) {
-          controller.error('Failed to get reader from Dify response.');
-          return;
-        }
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            // Signal end of message when stream ends
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'message_end' })}\n\n`));
-            break;
+        try {
+          // Send the main text content as chunks
+          const content = agentResponse.response || '';
+          const words = content.split(' ');
+          
+          // Stream words to simulate typing effect
+          for (let i = 0; i < words.length; i++) {
+            const chunk = i === 0 ? words[i] : ' ' + words[i];
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'text_chunk', text: chunk })}\n\n`));
+            // Small delay for typing effect
+            await new Promise(resolve => setTimeout(resolve, 50));
           }
 
-          buffer += decoder.decode(value, { stream: true });
-
-          // Process each line as a potential JSON object from Dify's stream
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || ''; // Keep incomplete last line in buffer
-
-          for (const line of lines) {
-            if (line.trim() === '') continue; // Skip empty lines
-            if (line.startsWith('event: ping')) continue;
-            if (line.startsWith('event: end')) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'message_end' })}\n\n`));
-              continue;
-            }
-            if (!line.startsWith('data: ')) continue; // Ignore other SSE fields
-
-            try {
-              const jsonStr = line.substring(6); // Remove 'data: ' prefix
-              const data = JSON.parse(jsonStr);
-              
-              // Handle structured content (charts, etc.)
-              if (data.event === 'structured_content' || data.type === 'structured_content') {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-              }
-              // Map OpenAI-style SSE delta chunks to the frontend's expected format
-              // Expected from backend: { choices: [{ delta: { content: string } }] }
-              else if (Array.isArray(data?.choices)) {
-                const text = data.choices.map((c: { delta?: { content?: string } }) => c?.delta?.content || '').join('');
-                if (text) {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'text_chunk', text })}\n\n`));
-                }
-              }
-            } catch (jsonError) {
-              console.error('Failed to parse backend stream JSON:', jsonError, 'Line:', line);
-            }
+          // Send structured content if available (charts, citations, etc.)
+          if (agentResponse.data?.chart) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+              event: 'structured_content', 
+              type: 'structured_content',
+              skill: agentResponse.skill,
+              content: agentResponse.data.chart
+            })}\n\n`));
           }
+
+          if (agentResponse.data?.citations?.length) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              event: 'structured_content',
+              type: 'citations',
+              skill: agentResponse.skill,
+              content: agentResponse.data.citations
+            })}\n\n`));
+          }
+
+          // Send telemetry info if available
+          if (agentResponse.telemetry) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+              event: 'telemetry',
+              telemetry: agentResponse.telemetry
+            })}\n\n`));
+          }
+
+          // Signal end of message
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'message_end' })}\n\n`));
+        } catch (error) {
+          console.error('Error processing agent response:', error);
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+            event: 'text_chunk', 
+            text: 'Sorry, there was an error processing the response.' 
+          })}\n\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'message_end' })}\n\n`));
         }
         controller.close();
       },

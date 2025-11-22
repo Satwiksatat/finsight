@@ -2,7 +2,7 @@
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, BarChart2 } from 'lucide-react';
+import { Loader2, FileText, Send, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
@@ -13,6 +13,7 @@ interface ChatInputProps {
   className?: string;
   onAttachFile?: () => void;
   isCentered?: boolean;
+  isUploading?: boolean;
 }
 
 export function ChatInput({
@@ -23,6 +24,7 @@ export function ChatInput({
   className = '',
   onAttachFile,
   isCentered = false,
+  isUploading = false,
 }: ChatInputProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
@@ -34,23 +36,27 @@ export function ChatInput({
   return (
     <div className={cn(
       "relative w-full transition-all duration-300",
-      isCentered ? "max-w-2xl mx-auto" : "",
+      isCentered ? "max-w-3xl mx-auto" : "",
       className
     )}>
       <div className={cn(
-        "relative w-full",
+        "relative w-full group",
         isCentered ? "min-h-[120px]" : "min-h-[80px]"
       )}>
+        {/* Performance indicator */}
+        <div className="absolute -top-1 left-0 right-0 h-1 overflow-hidden rounded-full opacity-0 group-focus-within:opacity-100 transition-opacity">
+          <div className="performance-meter" />
+        </div>
         {/* Document upload button with CSS tooltip */}
         <div className="absolute left-3 bottom-3 z-10 pl-4 group">
           <button
             type="button"
             onClick={onAttachFile}
-            disabled={isLoading}
+            disabled={isLoading || isUploading}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-full hover:bg-accent transition-colors",
+              "flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300",
               "text-sm text-muted-foreground relative",
-              "bg-background"
+              "bg-secondary/10 hover:bg-primary hover:text-primary-foreground"
             )}
             aria-label="Upload financial document"
           >
@@ -73,7 +79,7 @@ export function ChatInput({
           </button>
         </div>
 
-        {/* Textarea with fully rounded styling */}
+        {/* Textarea with athletic styling */}
         <Textarea
           placeholder="Ask about revenue forecast, vendor expenses, or financial KPIs..."
           value={inputMessage}
@@ -82,9 +88,12 @@ export function ChatInput({
           rows={1}
           disabled={isLoading}
           className={cn(
-            "w-full resize-none pr-16 pl-8 rounded-full h-20",
-            "input-sport py-4",
-            "text-[hsl(var(--card-foreground))] placeholder:text-muted-foreground/70",
+            "w-full resize-none pr-20 pl-20 rounded-2xl h-20",
+            "py-4 font-medium",
+            "bg-card border-2 border-primary/20 focus:border-primary",
+            "text-foreground placeholder:text-muted-foreground/60",
+            "transition-all duration-300",
+            "focus:shadow-lg focus:shadow-primary/20",
             isLoading && "opacity-50 cursor-not-allowed",
             isCentered ? "min-h-[120px]" : "min-h-[80px]"
           )}
@@ -95,21 +104,20 @@ export function ChatInput({
           <Button
             type="submit"
             size="icon"
+            variant="sport"
             className={cn(
-              "rounded-full btn-sport text-white",
-              "disabled:bg-muted disabled:text-muted-foreground",
-              "disabled:cursor-not-allowed h-10 w-10",
-              "transition-all"
+              "rounded-full h-12 w-12",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+              "group/send"
             )}
-
             onClick={onSendMessage}
-            disabled={isLoading || inputMessage.trim() === ''}
+            disabled={isLoading || isUploading || inputMessage.trim() === ''}
             aria-label="Send message"
           >
             {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <div className="agilitas-loader w-6 h-6" />
             ) : (
-              <BarChart2 className="h-5 w-5" />
+              <Zap className="h-5 w-5 group-hover/send:rotate-12 transition-transform" />
             )}
           </Button>
         </div>

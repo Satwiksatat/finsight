@@ -227,12 +227,13 @@ export function Sidebar() {
 
   return (
     <div className={cn(
-      'flex flex-col h-screen transition-all ease-in-out shrink-0 overflow-y-auto sidebar-scroll',
-      collapsed ? 'w-14 p-2' : 'w-64 p-4',
-      'bg-[hsl(var(--sidebar-background))] dark:bg-[#1e1e1e]'
-
-      , // light & dark mode background
+      'flex flex-col h-screen transition-all ease-in-out shrink-0 overflow-y-auto sidebar-scroll relative',
+      collapsed ? 'w-14 p-2' : 'w-72 p-4',
+      'bg-card border-r-2 border-primary/20',
+      'dark:bg-[hsl(var(--sidebar-background))]'
     )}>
+      {/* Speed lines background effect - only in dark mode */}
+      <div className="speed-lines opacity-0 dark:opacity-100" />
 
       {/* Header */}
       <div className="flex items-center justify-between h-14 mb-4">
@@ -241,8 +242,8 @@ export function Sidebar() {
           <div className="flex items-center">
             {showLogo && (
               <img
-                src="images\cfo.png"
-                alt="CFO Logo"
+                src="/images/agilitas-logo.svg"
+                alt="Agilitas Logo"
                 className="h-10 w-auto mr-3"
               />
             )}
@@ -252,7 +253,7 @@ export function Sidebar() {
         <Tooltip content={collapsed ? 'Open Sidebar' : 'Close Sidebar'}>
           <button
             className={cn(
-              "text-[hsl(var(--foreground))] text-lg", // Use foreground color for visibility
+              "text-foreground hover:text-primary transition-colors text-lg", 
               collapsed ? "w-10 h-10" : "ml-auto w-10 h-10"
             )}
             onClick={() => setCollapsed(!collapsed)}
@@ -273,15 +274,17 @@ export function Sidebar() {
             onClick={() => {
               startNewChat();
             }}
-            className="w-full justify-start mb-2 bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] dark:hover:bg-muted-foreground/10 font-medium">
-            <MessageCirclePlus className="w-4 h-4 text-[hsl(var(--foreground))]" />New Chat
+            variant="sport"
+            className="w-full justify-start mb-2 group">
+            <MessageCirclePlus className="w-4 h-4 group-hover:rotate-12 transition-transform" />New Chat
           </Button>
 
           <Button
-            className="w-full justify-start mb-2 bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] dark:hover:bg-muted-foreground/10 font-medium"
+            variant="outline"
+            className="w-full justify-start mb-2"
             onClick={() => setIsSearchDialogOpen(true)}
           >
-            <Search className="w-4 h-4 text-[hsl(var(--foreground))]" />Search chats
+            <Search className="w-4 h-4" />Search chats
           </Button>
         </div>
       )}
@@ -293,10 +296,11 @@ export function Sidebar() {
             <div
               key={chat.id}
               className={cn(
-                'flex items-center justify-between px-3 py-2 text-sm text-[hsl(var(--foreground))] cursor-pointer',
-                "hover:bg-[hsl(var(--accent))] dark:hover:bg-muted-foreground/10",
-                activeChatId === chat.id ? 'bg-[hsl(var(--muted))] dark:bg-muted-foreground/10 font-semibold' : 'bg-transparent',
-                'rounded-md'
+                'flex items-center justify-between px-3 py-2 text-sm cursor-pointer group text-foreground',
+                'hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent',
+                'hover:border-l-4 hover:border-primary transition-all duration-200',
+                activeChatId === chat.id ? 'bg-gradient-to-r from-primary/20 to-transparent border-l-4 border-primary font-bold' : 'bg-transparent',
+                'rounded-r-md'
               )}
               onClick={() => setActiveChatId(chat.id)}
             >
@@ -357,15 +361,16 @@ export function Sidebar() {
         <>
           <Separator className="my-2" />
           <div className="flex flex-col gap-2 pr-2 flex-1">
-            <h3 className="flex items-center gap-2 text-base font-medium text-[hsl(var(--foreground))] px-3 py-1">
+            <h3 className="flex items-center gap-2 text-base font-bold uppercase text-foreground px-3 py-2 tracking-wider">
+              <div className="performance-meter w-full" />
               Financial Analysis
             </h3>
             {financialItems.map((item) => (
               <div
                 key={item.id}
                 className={cn(
-                  'flex items-center justify-between px-3 py-2 text-sm text-[hsl(var(--foreground))] cursor-pointer',
-                  "hover:bg-[hsl(var(--accent))] dark:hover:bg-muted-foreground/10",
+                  'flex items-center justify-between px-3 py-2 text-sm text-foreground cursor-pointer',
+                  'hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent',
                   'rounded-md'
                 )}
               >
