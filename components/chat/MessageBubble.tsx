@@ -25,7 +25,7 @@ export function MessageBubble({ message, onContentClick, isClickable = false }: 
   const [submitting, setSubmitting] = useState(false);
   const [lastScore, setLastScore] = useState<number | null>(null);
 
-  const agentName = (message.metadata as any)?.skill || (message.metadata as any)?.agent || 'chat';
+  const agentName = message.metadata?.skill || message.metadata?.agent || 'chat';
 
   const submitFeedback = async (score: number, noteOverride?: string) => {
     try {

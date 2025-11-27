@@ -84,8 +84,8 @@ Title:`;
     return title && title.length <= 50
       ? title.charAt(0).toUpperCase() + title.slice(1)
       : defaultChatTitle(messages);
-  } catch (e: any) {
-    console.error("Failed to generate chat title:", e);
+  } catch (error) {
+    console.error("Failed to generate chat title:", error);
     return defaultChatTitle(messages);
   }
 }

@@ -45,77 +45,74 @@
 
   /* AGILITAS Professional Athletic Color Scheme */
 :root {
-    --background: 0 0% 98%;
-    --sidebar-background: 220 15% 12%;
-    --foreground: 0 0% 10%;
+    --background: 197 52% 91%;
+    --sidebar-background: 197 24% 14%;
+    --foreground: 205 26% 16%;
     
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 205 26% 16%;
     
     /* Professional Blue Primary - Trust & Performance */
-    --primary: 220 85% 55%;
+    --primary: 174 35% 52%;
     --primary-foreground: 0 0% 100%;
     
     /* Sophisticated Charcoal Secondary */
-    --secondary: 220 15% 20%;
+    --secondary: 198 27% 28%;
     --secondary-foreground: 0 0% 100%;
     
-    --muted: 220 10% 94%;
-    --muted-foreground: 220 10% 40%;
+    --muted: 197 30% 86%;
+    --muted-foreground: 197 16% 40%;
     
     /* Refined Teal Accent - Innovation & Growth */
-    --accent: 180 65% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 200 36% 74%;
+    --accent-foreground: 205 26% 16%;
     
-    --destructive: 0 75% 55%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 10% 88%;
-    --input: 220 10% 88%;
-    --ring: 220 85% 55%;
+    --border: 197 20% 80%;
+    --input: 197 20% 80%;
+    --ring: 174 35% 52%;
     
     /* Refined gradient variables */
-    --gradient-primary: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
-    --gradient-secondary: linear-gradient(135deg, #374151 0%, #1F2937 100%);
-    --gradient-accent: linear-gradient(135deg, #0891B2 0%, #0E7490 100%);
-    --gradient-hero: linear-gradient(135deg, #3B82F6 0%, #1E40AF 50%, #374151 100%);
-    --gradient-speed: linear-gradient(90deg, #0891B2 0%, #3B82F6 50%, #374151 100%);
+    --gradient-primary: linear-gradient(135deg, #53AAA3 0%, #9FC6D5 100%);
+    --gradient-secondary: linear-gradient(135deg, #212F34 0%, #111A1B 100%);
+    --gradient-accent: linear-gradient(135deg, #9FC6D5 0%, #53AAA3 100%);
+    --gradient-hero: linear-gradient(135deg, #DEEDF2 0%, #9FC6D5 40%, #212F34 100%);
+    --gradient-speed: linear-gradient(90deg, #53AAA3 0%, #9FC6D5 50%, #212F34 100%);
   }
 
 
   /* Dark Mode - Professional Night Theme */
   .dark {
-    --background: 220 15% 5%;
-    --sidebar-background: 220 20% 3%;
+    --background: 197 32% 8%;
+    --sidebar-background: 197 40% 6%;
     --foreground: 0 0% 95%;
     
-    --card: 220 15% 10%;
+    --card: 197 30% 12%;
     --card-foreground: 0 0% 95%;
     
-    --popover: 220 15% 10%;
+    --popover: 197 30% 12%;
     --popover-foreground: 0 0% 95%;
     
-    /* Professional Blue Primary - Softer in dark */
-    --primary: 220 90% 65%;
-    --primary-foreground: 220 15% 10%;
+    --primary: 174 45% 55%;
+    --primary-foreground: 205 26% 16%;
     
-    /* Sophisticated Charcoal Secondary */
-    --secondary: 220 15% 25%;
+    --secondary: 197 28% 22%;
     --secondary-foreground: 0 0% 95%;
     
-    --muted: 220 15% 15%;
-    --muted-foreground: 220 10% 65%;
+    --muted: 197 23% 18%;
+    --muted-foreground: 197 15% 70%;
     
-    /* Refined Teal Accent */
-    --accent: 180 70% 55%;
-    --accent-foreground: 220 15% 10%;
+    --accent: 200 40% 60%;
+    --accent-foreground: 205 26% 16%;
     
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 220 90% 65%;
+    --border: 197 24% 20%;
+    --input: 197 24% 20%;
+    --ring: 174 45% 55%;
   }
 
   /* -------------------------------------------------------------------------------------- */

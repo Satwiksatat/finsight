@@ -2,7 +2,6 @@
 import React from 'react';
 import { LLMContent, TextContent, CodeContent, ChartContent, ImageContent } from '@/lib/types';
 import { MarkdownRenderer } from '@/components/common/MarkDownRenderer';
-import { ChartDisplay } from '@/components/common/ChartDisplay';
 import { ImageDisplay } from '@/components/common/ImageDisplay';
 
 interface ResponseMessageProps {

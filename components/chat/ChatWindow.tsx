@@ -15,7 +15,6 @@ interface ChatWindowProps {
   onSendMessage: () => void;
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  updateChatTitle: (id: string, title: string) => void;
   onContentClick?: (content: LLMContent) => void;
   isClickable?: boolean;
 }
@@ -29,7 +28,6 @@ export function ChatWindow({
   onSendMessage,
   isLoading,
   messagesEndRef,
-  updateChatTitle,
   onContentClick,
   isClickable = false,
 }: ChatWindowProps) {

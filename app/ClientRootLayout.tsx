@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/common/SideBar";
 import { ChatProvider } from "@/context/ChatContext";
 import { HeaderDropdown } from "@/components/common/HeaderDropdown";
+import { AuthProvider } from "@/context/AuthContext";
+import { TopNav } from "@/components/common/TopNav";
 
 export default function ClientRootLayout({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(false);
@@ -21,26 +23,29 @@ export default function ClientRootLayout({ children }: { children: React.ReactNo
   };
 
   return (
-    <ChatProvider>
-      <div className="flex flex-row w-full min-h-screen">
-        <Sidebar />
-        
-        <div className="flex flex-col flex-1">
-          {/* Top-right dropdown menu */}
-          <div className="absolute top-4 right-4 z-50 mr-2 mt-2">
-            <HeaderDropdown
-              onClearStorage={handleClearStorage}
-              onToggleTheme={() => setIsDark(!isDark)}
-              isDarkMode={isDark}
-            />
-          </div>
+    <AuthProvider>
+      <ChatProvider>
+        <div className="flex flex-row w-full min-h-screen bg-[#DEEDF2] dark:bg-[#05090A]">
+          <Sidebar />
 
-          {/* Main content area */}
-          <main className="flex-grow">
-            {children}
-          </main>
+          <div className="flex flex-col flex-1 relative">
+            <header className="flex items-center justify-between px-6 py-4 border-b border-white/20 bg-white/70 dark:bg-[#0B1416]/70 backdrop-blur-xl">
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-[#688790]">FinSight Control Tower</p>
+                <h1 className="text-2xl font-black text-[#111A1B] dark:text-white">CFO Co-Pilot</h1>
+              </div>
+              <HeaderDropdown
+                onClearStorage={handleClearStorage}
+                onToggleTheme={() => setIsDark(!isDark)}
+                isDarkMode={isDark}
+              />
+            </header>
+            <TopNav />
+
+            <main className="flex-grow flex flex-col overflow-y-auto">{children}</main>
+          </div>
         </div>
-      </div>
-    </ChatProvider>
+      </ChatProvider>
+    </AuthProvider>
   );
 }

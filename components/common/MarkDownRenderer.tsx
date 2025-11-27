@@ -2,6 +2,7 @@
 'use client';
 
 import ReactMarkdown from 'react-markdown';
+import Image from 'next/image';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism'; // A popular dark theme
 import remarkGfm from 'remark-gfm'; // For GitHub Flavored Markdown (tables, task lists)
@@ -18,14 +19,15 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]} // Be cautious with rehypeRaw, only if you trust the markdown source
         components={{
-          code({ node, inline, className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || '');
-            return !inline && match ? (
+          code({ className = '', children, ...props }) {
+            const match = /language-(\w+)/.exec(className || "");
+            // If className contains a language (e.g. language-js), render with SyntaxHighlighter
+            return match ? (
               <SyntaxHighlighter
-                style={dracula} // Apply the chosen theme
+                style={dracula}
                 language={match[1]}
-                PreTag="div" // Render as a div
-                {...props}
+                PreTag="div"
+                {...(props as any)}
               >
                 {String(children).replace(/\n$/, '')}
               </SyntaxHighlighter>
@@ -53,17 +55,21 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
             </a>
           ),
           img: ({ src, alt }) => {
-            // Don't render if src is empty or undefined
-            if (!src || src.trim() === '') {
+            if (typeof src !== 'string' || src.trim() === '') {
               return null;
             }
             return (
-              // Use Next.js Image component for optimization if you are rendering images from Markdown
-              // Note: This example uses regular <img> for simplicity with ReactMarkdown.
-              // For proper Next/Image, you might need a custom image component and configure next.config.js for domains.
-              <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-4" />
+              <div className="my-4 w-full">
+                <Image
+                  src={src}
+                  alt={alt ?? ''}
+                  width={800}
+                  height={450}
+                  className="h-auto w-full rounded-lg object-contain"
+                />
+              </div>
             );
-          }
+          },
         }}
       >
         {content}

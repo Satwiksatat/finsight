@@ -6,7 +6,7 @@ export type MessageRole = 'user' | 'assistant' | 'system' | 'function';
 type BaseContent<T extends string> = {
   type: T;
   description?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 };
 
 // Text content
@@ -49,7 +49,7 @@ export type ChartContent = BaseContent<'chart'> & {
   chartType: 'bar' | 'line' | 'pie' | 'doughnut' | 'scatter';
   title?: string;
   data: ChartData;
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
   interactive?: boolean;
 };
 
@@ -90,8 +90,8 @@ export type VideoContent = BaseContent<'video'> & {
 // Function call content
 export type FunctionCallContent = BaseContent<'function_call'> & {
   name: string;
-  arguments: Record<string, any>;
-  result?: any;
+  arguments: Record<string, unknown>;
+  result?: unknown;
 };
 
 // Union type for all content types
@@ -119,13 +119,14 @@ export function isChartContent(content: LLMContent): content is ChartContent {
 }
 
 // Message metadata
-export interface MessageMetadata {
+export type MessageMetadata = {
   tokens?: number;
   processingTime?: number;
   model?: string;
   temperature?: number;
-  [key: string]: any;
-}
+  skill?: string;
+  agent?: string;
+} & Record<string, unknown>;
 
 // Chat message structure
 export interface ChatMessage {
@@ -155,7 +156,7 @@ export interface Conversation {
   tags?: string[];
   model?: string;
   tokenCount?: number;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   isTitleGenerated?: boolean;
   isGeneratingTitle?: boolean;
 }
@@ -164,7 +165,7 @@ export interface Conversation {
 export interface FunctionDefinition {
   name: string;
   description: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   required?: string[];
 }
 
@@ -172,9 +173,9 @@ export interface FunctionDefinition {
 export interface ConversationContext {
   currentTopic?: string;
   entities?: Record<string, string>;
-  preferences?: Record<string, any>;
+  preferences?: Record<string, unknown>;
   summary?: string;
-  memory?: Record<string, any>;
+  memory?: Record<string, unknown>;
 }
 
 // Chat window props
@@ -208,7 +209,7 @@ export interface ChatContextType {
 }
 
 // API response type
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   status: number;
@@ -234,3 +235,93 @@ export type MessageContentProcessor = {
   getTextContent: (content: LLMContent[]) => string;
   getFirstContentOfType: <T extends LLMContent>(contents: LLMContent[], type: T['type']) => T | undefined;
 };
+
+export type SeverityLevel = 'info' | 'warning' | 'critical';
+
+export interface DashboardSnapshotKPI {
+  id: string;
+  label: string;
+  value: number;
+  target?: number;
+  delta?: number;
+  color?: string;
+  suffix?: string;
+  footnote?: string;
+}
+
+export interface DashboardCard {
+  id: string;
+  title: string;
+  value: string;
+  delta: number;
+  trend: number[];
+  suffix?: string;
+  subLabel?: string;
+}
+
+export interface WorkingCapitalPoint {
+  label: string;
+  value: number;
+}
+
+export interface WorkingCapitalData {
+  cycleDays: number;
+  targetDays: number;
+  history: WorkingCapitalPoint[];
+}
+
+export interface RevenueChannel {
+  label: string;
+  data: number[];
+  color: string;
+}
+
+export interface RevenueSummary {
+  label: string;
+  value: string;
+  delta: number;
+}
+
+export interface RevenueBreakdown {
+  labels: string[];
+  channels: RevenueChannel[];
+  summary: RevenueSummary[];
+}
+
+export interface HeatMapRow {
+  title: string;
+  cells: {
+    label: string;
+    value: number;
+    status?: 'positive' | 'negative' | 'neutral';
+  }[];
+}
+
+export interface WaterfallStep {
+  label: string;
+  value: number;
+  type: 'increase' | 'decrease' | 'total';
+}
+
+export interface HealthScoreData {
+  score: number;
+  commentary: string;
+  heatmap: HeatMapRow[];
+  waterfall: WaterfallStep[];
+}
+
+export interface DashboardKpiPayload {
+  snapshot: DashboardSnapshotKPI[];
+  cards: DashboardCard[];
+  workingCapital: WorkingCapitalData;
+  revenue: RevenueBreakdown;
+  health: HealthScoreData;
+}
+
+export interface DashboardAlert {
+  id: string;
+  title: string;
+  description: string;
+  severity: SeverityLevel;
+  timestamp?: string;
+}

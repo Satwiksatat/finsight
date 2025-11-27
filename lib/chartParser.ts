@@ -8,7 +8,7 @@ export interface LLMChartResponse {
     title?: {
       text: string;
     };
-    tooltip?: any;
+    tooltip?: Record<string, unknown>;
     legend?: {
       data: string[];
     };
@@ -22,8 +22,8 @@ export interface LLMChartResponse {
     series: Array<{
       name: string;
       type: string;
-      data: number[] | Array<{name: string; value: number}>;
-      [key: string]: any;
+      data: number[] | Array<{ name?: string; value?: number }>;
+      [key: string]: unknown;
     }>;
   };
   explain?: string;
@@ -36,14 +36,18 @@ export function parseLLMChartResponse(response: LLMChartResponse): ChartContent 
   const chartType = mapEChartsTypeToChartJS(firstSeries?.type || 'bar');
   
   let labels: string[] = [];
-  let datasets: any[] = [];
+  let datasets: ChartData['datasets'] = [];
   
   // Handle pie/doughnut charts differently
   if (chartType === 'pie' || chartType === 'doughnut') {
     // For pie charts, data is in format [{name: "Revenue", value: 45.2}, ...]
     if (firstSeries && Array.isArray(firstSeries.data)) {
-      labels = firstSeries.data.map((item: any) => item.name || item);
-      const values = firstSeries.data.map((item: any) => item.value || item);
+      labels = firstSeries.data.map((item) =>
+        typeof item === 'number' ? String(item) : item?.name || ''
+      );
+      const values = firstSeries.data.map((item) =>
+        typeof item === 'number' ? item : item?.value ?? 0
+      );
       
       datasets = [{
         label: firstSeries.name || 'Data',
@@ -64,7 +68,11 @@ export function parseLLMChartResponse(response: LLMChartResponse): ChartContent 
     labels = chart_json.xAxis?.data || [];
     datasets = chart_json.series.map((series, index) => ({
       label: series.name,
-      data: series.data,
+      data: Array.isArray(series.data)
+        ? (typeof series.data[0] === "object"
+            ? (series.data as Array<{ name?: string, value?: number }>).map((d) => d.value ?? 0)
+            : (series.data as number[]))
+        : [],
       backgroundColor: getChartColor(index, series.type),
       borderColor: getChartColor(index, series.type),
       borderWidth: 2,
@@ -79,7 +87,7 @@ export function parseLLMChartResponse(response: LLMChartResponse): ChartContent 
   };
 
   // Create options based on chart type
-  const options: any = {
+  const options: Record<string, unknown> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -168,14 +176,18 @@ function getChartColor(index: number, chartType: string): string {
   return colors[index % colors.length];
 }
 
-export function isLLMChartResponse(obj: any): obj is LLMChartResponse {
+export function isLLMChartResponse(obj: unknown): obj is LLMChartResponse {
   return (
-    obj &&
     typeof obj === 'object' &&
-    obj.viz_choice === 'chart' &&
-    obj.chart_json &&
-    typeof obj.chart_json === 'object' &&
-    Array.isArray(obj.chart_json.series)
+    obj !== null &&
+    'viz_choice' in obj &&
+    (obj as { viz_choice?: unknown }).viz_choice === 'chart' &&
+    'chart_json' in obj &&
+    typeof (obj as { chart_json?: unknown }).chart_json === 'object' &&
+    (obj as { chart_json?: { series?: unknown } }).chart_json !== null &&
+    Array.isArray(
+      (obj as { chart_json?: { series?: unknown } }).chart_json!.series
+    )
   );
 }
 

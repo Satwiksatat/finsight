@@ -2,7 +2,8 @@
 'use client'; // Chart.js needs to be client-side
 
 import React from 'react';
-import { ChartData, ChartContent } from '@/lib/types';
+import type { ChartData as ChartJsData, ChartOptions, PluginOptionsByType } from 'chart.js';
+import { ChartContent } from '@/lib/types';
 import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -34,23 +35,19 @@ interface ChartDisplayProps {
   chartData: ChartContent;
 }
 
+type SupportedChartType = 'bar' | 'line' | 'pie' | 'doughnut';
+
 export function ChartDisplay({ chartData }: ChartDisplayProps) {
-  console.log('ChartDisplay received:', chartData);
-  console.log('Chart data validation:', {
-    hasChartData: !!chartData,
-    hasData: !!chartData?.data,
-    chartType: chartData?.chartType,
-    dataLabels: chartData?.data?.labels,
-    dataDatasets: chartData?.data?.datasets
-  });
-  
   if (!chartData || !chartData.data) {
-    console.log('ChartDisplay: Invalid chart data, returning error');
     return <div className="text-red-500">Invalid chart data provided.</div>;
   }
 
+  // Get chart specification from chartData
   const { chartType, title, data, options } = chartData;
-  
+  const baseOptions = (options ?? {}) as ChartOptions<SupportedChartType>;
+  const basePlugins = (baseOptions.plugins ?? {}) as PluginOptionsByType<SupportedChartType>;
+  const baseScales = baseOptions.scales;
+
   // Professional Agilitas colors
   const agilitasColors = {
     primary: '#3B82F6',
@@ -63,102 +60,129 @@ export function ChartDisplay({ chartData }: ChartDisplayProps) {
   };
   
   // Apply Agilitas colors to datasets
-  const brandedData = {
+  const brandedData: ChartJsData<SupportedChartType> = {
     ...data,
     datasets: data.datasets.map((dataset, index) => ({
       ...dataset,
-      backgroundColor: dataset.backgroundColor || [
-        agilitasColors.primary,
-        agilitasColors.accent,
-        agilitasColors.secondary,
-        agilitasColors.primaryLight,
-        agilitasColors.accentDark,
-      ][index % 5],
-      borderColor: dataset.borderColor || [
-        agilitasColors.primaryDark,
-        agilitasColors.accentDark,
-        agilitasColors.secondary,
-        agilitasColors.primary,
-        agilitasColors.accent,
-      ][index % 5],
+      backgroundColor:
+        dataset.backgroundColor ||
+        [
+          agilitasColors.primary,
+          agilitasColors.accent,
+          agilitasColors.secondary,
+          agilitasColors.primaryLight,
+          agilitasColors.accentDark,
+        ][index % 5],
+      borderColor:
+        dataset.borderColor ||
+        [
+          agilitasColors.primaryDark,
+          agilitasColors.accentDark,
+          agilitasColors.secondary,
+          agilitasColors.primary,
+          agilitasColors.accent,
+        ][index % 5],
       borderWidth: dataset.borderWidth || 2,
     })),
   };
   
   // Enhanced options with Agilitas styling
-  const brandedOptions = {
-    ...options,
+  const brandedOptions: ChartOptions<SupportedChartType> = {
+    ...baseOptions,
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      ...options?.plugins,
+      ...basePlugins,
       legend: {
-        ...options?.plugins?.legend,
+        ...basePlugins.legend,
         labels: {
-          ...options?.plugins?.legend?.labels,
+          ...(basePlugins.legend?.labels ?? {}),
           font: {
             family: 'Montserrat, sans-serif',
-            weight: '600',
+            weight: 600,
             size: 12,
           },
           color: '#1A1A1A',
         },
       },
       title: {
-        ...options?.plugins?.title,
+        ...basePlugins.title,
         font: {
           family: 'Oswald, sans-serif',
-          weight: '700',
+          weight: 700,
           size: 16,
         },
         color: '#1A1A1A',
       },
     },
-    scales: chartType === 'bar' || chartType === 'line' ? {
-      ...options?.scales,
-      x: {
-        ...options?.scales?.x,
-        ticks: {
-          ...options?.scales?.x?.ticks,
-          font: {
-            family: 'Montserrat, sans-serif',
-            weight: '500',
-          },
-          color: '#666666',
-        },
-        grid: {
-          ...options?.scales?.x?.grid,
-          color: 'rgba(0, 0, 0, 0.05)',
-        },
-      },
-      y: {
-        ...options?.scales?.y,
-        ticks: {
-          ...options?.scales?.y?.ticks,
-          font: {
-            family: 'Montserrat, sans-serif',
-            weight: '500',
-          },
-          color: '#666666',
-        },
-        grid: {
-          ...options?.scales?.y?.grid,
-          color: 'rgba(0, 0, 0, 0.05)',
-        },
-      },
-    } : undefined,
+    scales:
+      chartType === 'bar' || chartType === 'line'
+        ? {
+            ...baseScales,
+            x: {
+              ...(baseScales?.x ?? {}),
+              ticks: {
+                ...(baseScales?.x?.ticks ?? {}),
+                font: {
+                  family: 'Montserrat, sans-serif',
+                  weight: 500,
+                },
+                color: '#666666',
+              },
+              grid: {
+                ...(baseScales?.x?.grid ?? {}),
+                color: 'rgba(0, 0, 0, 0.05)',
+              },
+            },
+            y: {
+              ...(baseScales?.y ?? {}),
+              ticks: {
+                ...(baseScales?.y?.ticks ?? {}),
+                font: {
+                  family: 'Montserrat, sans-serif',
+                  weight: 500,
+                },
+                color: '#666666',
+              },
+              grid: {
+                ...(baseScales?.y?.grid ?? {}),
+                color: 'rgba(0, 0, 0, 0.05)',
+              },
+            },
+          }
+        : undefined,
   };
 
   const chartComponent = () => {
     switch (chartType) {
       case 'bar':
-        return <Bar data={brandedData} options={brandedOptions} />;
+        return (
+          <Bar
+            data={brandedData as ChartJsData<'bar'>}
+            options={brandedOptions as ChartOptions<'bar'>}
+          />
+        );
       case 'line':
-        return <Line data={brandedData} options={brandedOptions} />;
+        return (
+          <Line
+            data={brandedData as ChartJsData<'line'>}
+            options={brandedOptions as ChartOptions<'line'>}
+          />
+        );
       case 'pie':
-        return <Pie data={brandedData} options={brandedOptions} />;
+        return (
+          <Pie
+            data={brandedData as ChartJsData<'pie'>}
+            options={brandedOptions as ChartOptions<'pie'>}
+          />
+        );
       case 'doughnut':
-        return <Doughnut data={brandedData} options={brandedOptions} />;
+        return (
+          <Doughnut
+            data={brandedData as ChartJsData<'doughnut'>}
+            options={brandedOptions as ChartOptions<'doughnut'>}
+          />
+        );
       default:
         return <div className="text-red-500">Unsupported chart type: {chartType}</div>;
     }

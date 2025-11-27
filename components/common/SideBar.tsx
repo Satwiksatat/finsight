@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -9,21 +11,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import {
-  MoreVertical,
-  Share,
+  AlertTriangle,
   Archive,
-  Pencil,
-  Trash2,
+  BarChart2,
+  ClipboardList,
+  FileText as FileTextIcon,
+  LineChart,
   MessageCirclePlus,
   MessageSquareText,
+  MoreVertical,
+  Pencil,
   Search,
-  LineChart,
-  PieChart,
-  FileText as FileTextIcon,
-  DollarSign,
-  BarChart2,
-  Landmark,
-  ClipboardList
+  Share,
+  Target,
+  Trash2,
 } from 'lucide-react';
 
 import { PiSidebarSimple, PiSidebarFill } from 'react-icons/pi';
@@ -31,7 +32,6 @@ import { PiSidebarSimple, PiSidebarFill } from 'react-icons/pi';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { useChat } from '@/context/ChatContext';
 import { cn } from '@/lib/utils';
 import {
@@ -49,17 +49,48 @@ import { Conversation } from '@/lib/types';
 type FinancialItem = {
   id: string;
   title: string;
+  description?: string;
   icon: React.ReactNode;
+  href?: string;
+};
+
+type AlertSummary = {
+  id: string;
+  title: string;
+  description: string;
+  severity: 'info' | 'warning' | 'critical';
+  updatedAt: string;
 };
 
 const financialItems: FinancialItem[] = [
-  { id: 'start-analysis', title: 'Start Analysis', icon: <LineChart className="w-4 h-4" /> },
-  { id: 'q2-budget', title: 'Q2 Budget Review', icon: <PieChart className="w-4 h-4" /> },
-  { id: 'vendor-expenses', title: 'Vendor Expenses', icon: <FileTextIcon className="w-4 h-4" /> },
-  { id: 'revenue-forecast', title: 'Revenue Forecast', icon: <DollarSign className="w-4 h-4" /> },
-  { id: 'kpi-dashboard', title: 'KPI Dashboard', icon: <BarChart2 className="w-4 h-4" /> },
-  { id: 'pl-statement', title: 'P&L Statement', icon: <Landmark className="w-4 h-4" /> },
-  { id: 'balance-sheet', title: 'Balance Sheet', icon: <ClipboardList className="w-4 h-4" /> }
+  {
+    id: 'launch-estimates',
+    title: 'Launch Project Estimates',
+    description: 'Q4 SKU expansion',
+    icon: <LineChart className="w-4 h-4" />,
+    href: '/analytics',
+  },
+  {
+    id: 'balance-sheet',
+    title: 'Balance Sheet Review',
+    description: 'Net cash & leverage',
+    icon: <ClipboardList className="w-4 h-4" />,
+    href: '/analytics?view=balance',
+  },
+  {
+    id: 'income-statement',
+    title: 'Income Statement',
+    description: 'Variance insights',
+    icon: <FileTextIcon className="w-4 h-4" />,
+    href: '/reports',
+  },
+  {
+    id: 'forecast',
+    title: 'Revenue Forecast',
+    description: 'Scenario studio',
+    icon: <BarChart2 className="w-4 h-4" />,
+    href: '/forecasting',
+  },
 ];
 
 export function Sidebar() {
@@ -73,6 +104,7 @@ export function Sidebar() {
     archiveConversation,
   } = useChat();
 
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editInput, setEditInput] = useState('');
@@ -83,7 +115,9 @@ export function Sidebar() {
     chatTitle: string;
   } | null>(null);
 
-  const [visibleConversations, setVisibleConversations] = useState<Conversation[]>([]); // ✅ updated default
+  const [visibleConversations, setVisibleConversations] = useState<Conversation[]>([]);
+  const [alerts, setAlerts] = useState<AlertSummary[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('conversations');
@@ -94,7 +128,22 @@ export function Sidebar() {
     }
   }, [conversations]); // ✅ place this immediately after the useState
 
-  const [searchQuery, setSearchQuery] = useState('');
+  useEffect(() => {
+    const loadAlerts = async () => {
+      setAlertsLoading(true);
+      try {
+        const response = await fetch('/api/dashboard/alerts', { cache: 'no-store' });
+        const data = await response.json();
+        setAlerts(data.alerts || []);
+      } catch (error) {
+        console.warn('Failed to fetch alerts', error);
+      } finally {
+        setAlertsLoading(false);
+      }
+    };
+    loadAlerts();
+  }, []);
+
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [searchOverlayQuery, setSearchOverlayQuery] = useState('');
   const [filteredSearchConversations, setFilteredSearchConversations] = useState<Conversation[]>([]);
@@ -106,16 +155,6 @@ export function Sidebar() {
       inputRef.current.select();
     }
   }, [editingChatId]);
-
-  useEffect(() => {
-    const normalize = (text: string) => text.toLowerCase().trim();
-    const filtered = conversations.filter(
-      (c) =>
-        !c.archived &&
-        normalize(c.title).includes(normalize(searchQuery))
-    );
-    setVisibleConversations(filtered);
-  }, [searchQuery, conversations]);
 
   useEffect(() => {
     const normalize = (text: string) => text.toLowerCase().trim();
@@ -167,6 +206,25 @@ export function Sidebar() {
 
   const groupedSearchConversations = groupConversations(filteredSearchConversations);
 
+  const severityTone = (severity: AlertSummary['severity']) => {
+    switch (severity) {
+      case 'critical':
+        return 'text-rose-400';
+      case 'warning':
+        return 'text-amber-300';
+      default:
+        return 'text-[#53AAA3]';
+    }
+  };
+
+  const handleQuickLinkClick = (item: FinancialItem) => {
+    if (item.href) {
+      router.push(item.href);
+    } else {
+      toast.info('Coming soon');
+    }
+  };
+
   function handleShare(id: string) {
     navigator.clipboard.writeText(`${window.location.origin}/chat/${id}`);
     toast.success('Chat link copied to clipboard!');
@@ -201,23 +259,6 @@ export function Sidebar() {
     toast(`Conversation archived.`);
   }
 
-  // Handler for financial item actions
-  const handleFinancialItemAction = (action: string, itemId: string) => {
-    switch (action) {
-      case 'rename':
-        toast.info(`Renaming ${itemId}`);
-        break;
-      case 'share':
-        toast.info(`Sharing ${itemId}`);
-        break;
-      case 'archive':
-        toast.info(`Archiving ${itemId}`);
-        break;
-      case 'delete':
-        toast.warning(`Deleting ${itemId}`);
-        break;
-    }
-  };
   const [showLogo, setShowLogo] = useState(false);
 
   useEffect(() => {
@@ -241,10 +282,13 @@ export function Sidebar() {
         {!collapsed && (
           <div className="flex items-center">
             {showLogo && (
-              <img
+              <Image
                 src="/images/agilitas-logo.svg"
                 alt="Agilitas Logo"
+                width={120}
+                height={40}
                 className="h-10 w-auto mr-3"
+                priority
               />
             )}
 
@@ -266,6 +310,62 @@ export function Sidebar() {
           </button>
         </Tooltip>
       </div>
+
+      {!collapsed && (
+        <div className="flex flex-col gap-4 mb-4">
+          <div className="rounded-2xl bg-gradient-to-br from-[#212F34] to-[#111A1B] text-white p-4 border border-white/10 shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs uppercase tracking-[0.35em] text-[#9FC6D5]">Proactive alerts</p>
+              <button
+                className="text-[10px] uppercase tracking-widest text-[#A3CADA]"
+                onClick={() => router.push('/analytics')}
+              >
+                View all
+              </button>
+            </div>
+            <div className="space-y-3">
+              {alertsLoading && <div className="text-xs text-[#9FC6D5]">Syncing telemetry…</div>}
+              {!alertsLoading && alerts.length === 0 && (
+                <p className="text-xs text-[#9FC6D5]">No active alerts. Cash and margins stable.</p>
+              )}
+              {alerts.slice(0, 3).map((alert) => (
+                <div key={alert.id} className="flex gap-3 rounded-2xl bg-white/5 px-3 py-2 border border-white/10">
+                  <AlertTriangle className={`w-4 h-4 mt-1 ${severityTone(alert.severity)}`} />
+                  <div>
+                    <p className="text-sm font-semibold leading-tight">{alert.title}</p>
+                    <p className="text-xs text-[#9FC6D5]">{alert.description}</p>
+                    <span className="text-[10px] uppercase tracking-widest text-[#688790]">{alert.updatedAt}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-white/70 dark:bg-[#111A1B]/80 border border-white/30 p-4 shadow">
+            <p className="text-xs uppercase tracking-[0.35em] text-[#688790] mb-3">Command shortcuts</p>
+            <div className="space-y-2">
+              {financialItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleQuickLinkClick(item)}
+                  className="w-full flex items-center justify-between text-left px-3 py-2 rounded-2xl border border-white/60 dark:border-white/10 hover:border-[#53AAA3] transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 rounded-2xl bg-[#DEEDF2] dark:bg-[#0F191B] text-[#212F34]">
+                      {item.icon}
+                    </span>
+                    <span>
+                      <p className="text-sm font-semibold text-[#212F34] dark:text-white">{item.title}</p>
+                      {item.description && <p className="text-[11px] text-[#688790]">{item.description}</p>}
+                    </span>
+                  </div>
+                  <Target className="w-4 h-4 text-[#A3CADA]" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Chat + Search Trigger */}
       {!collapsed && (
@@ -356,58 +456,6 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* Financial Analysis Section */}
-      {!collapsed && (
-        <>
-          <Separator className="my-2" />
-          <div className="flex flex-col gap-2 pr-2 flex-1">
-            <h3 className="flex items-center gap-2 text-base font-bold uppercase text-foreground px-3 py-2 tracking-wider">
-              <div className="performance-meter w-full" />
-              Financial Analysis
-            </h3>
-            {financialItems.map((item) => (
-              <div
-                key={item.id}
-                className={cn(
-                  'flex items-center justify-between px-3 py-2 text-sm text-foreground cursor-pointer',
-                  'hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent',
-                  'rounded-md'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  {item.icon}
-                  <span>{item.title}</span>
-                </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-card z-50">
-                    <DropdownMenuItem onClick={() => handleFinancialItemAction('rename', item.id)}>
-                      <Pencil className="w-4 h-4 mr-2" /> Rename
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleFinancialItemAction('share', item.id)}>
-                      <Share className="w-4 h-4 mr-2" /> Share
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleFinancialItemAction('archive', item.id)}>
-                      <Archive className="w-4 h-4 mr-2" /> Archive
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleFinancialItemAction('delete', item.id)}
-                      className="text-red-500 focus:bg-red-100">
-                      <Trash2 className="w-4 h-4 mr-2 text-red-500" /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
       {/* Search Dialog */}
       <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
         <DialogContent className="p-0 sm:max-w-md md:max-w-lg lg:max-w-xl">
@@ -461,8 +509,9 @@ export function Sidebar() {
           <DialogTitle className="text-[#6F4E33]">Delete chat?</DialogTitle> 
             <br></br>
             <DialogDescription>
-              Are you sure you want to delete "
-              <strong>{currentAction?.chatTitle}</strong>"?
+              Are you sure you want to delete{' '}
+              <strong>{currentAction?.chatTitle}</strong>
+              ?
             </DialogDescription>
           </DialogHeader><br></br>
           <DialogFooter>

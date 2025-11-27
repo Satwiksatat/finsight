@@ -2,7 +2,7 @@
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, Send, Zap } from 'lucide-react';
+import { FileText, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
